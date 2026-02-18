@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metaproject - Home</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #f4f7f6; font-family: 'Inter', sans-serif; }
+        .sidebar { width: 240px; background: #ffffff; border-right: 1px solid #e5e7eb; position: fixed; height: 100vh; }
+        .nav-link { display: flex; align-items: center; padding: 12px 24px; color: #6b7280; font-weight: 500; font-size: 0.875rem; transition: all 0.2s; }
+        .nav-link:hover { background: #f9fafb; color: #1B365D; }
+        .nav-link.active { background: #eff6ff; color: #1B365D; border-right: 3px solid #1B365D; }
+        .main-content { margin-left: 240px; padding: 32px; }
+        .card-stat { background: white; border-radius: 8px; border: 1px solid #e5e7eb; padding: 20px; }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="p-6 text-2xl font-black text-[#1B365D] tracking-tighter">METAPROJECT</div>
+        <nav class="mt-4">
+            <a href="index.html" class="nav-link active">Dashboard</a>
+            <a href="requerimientos.html" class="nav-link">Requerimientos</a>
+            <a href="plan.html" class="nav-link">Actividades (Gantt)</a>
+            <a href="#" class="nav-link">Presupuesto</a>
+            <a href="#" class="nav-link">Trazabilidad</a>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <header class="mb-8 flex justify-between items-center">
+            <div>
+                <h1 class="text-xl font-bold text-gray-800">Nombre del Proyecto</h1>
+                <p class="text-xs text-gray-500">Objetivo del proyecto...</p>
+            </div>
+            <div class="text-right text-xs text-gray-400 font-medium">17/02/2026</div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-8">
+            <div class="card-stat flex flex-col items-center">
+                <canvas id="donaChart" width="100" height="100"></canvas>
+                <div class="text-center mt-4"><p class="text-2xl font-bold">67%</p><p class="text-[10px] uppercase text-gray-400">Avance</p></div>
+            </div>
+            <div class="lg:col-span-3 card-stat grid grid-cols-4 gap-4 items-center">
+                <div class="text-center border-r"><p class="text-lg font-bold text-green-600">85</p><p class="text-[10px] text-gray-400">Completadas</p></div>
+                <div class="text-center border-r"><p class="text-lg font-bold text-blue-500">25</p><p class="text-[10px] text-gray-400">En tiempo</p></div>
+                <div class="text-center border-r"><p class="text-lg font-bold text-yellow-500">10</p><p class="text-[10px] text-gray-400">Pendientes</p></div>
+                <div class="text-center"><p class="text-lg font-bold text-red-500">5</p><p class="text-[10px] text-gray-400">Atrasadas</p></div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+            <div class="p-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
+                <span class="text-xs font-bold text-gray-600">EL MURO</span>
+                <button class="bg-[#1B365D] text-white px-4 py-1.5 rounded text-xs font-bold">Publicar</button>
+            </div>
+            <div class="p-4">
+                <div class="flex gap-4 mb-6">
+                    <div class="w-10 h-10 rounded-full bg-gray-200 flex-shrink-0"></div>
+                    <div class="flex-1">
+                        <p class="text-xs font-bold">PF Papas Fritas <span class="text-gray-400 font-normal">20/10 02:00 p.m.</span></p>
+                        <p class="text-sm mt-1 text-gray-700">¡Hola, equipo! Esto es una prueba de cómo se debe ver el muro.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const ctx = document.getElementById('donaChart').getContext('2d');
+        new Chart(ctx, { type: 'doughnut', data: { datasets: [{ data: [67, 33], backgroundColor: ['#1B365D', '#F3F4F6'], borderWidth: 0 }] }, options: { cutout: '80%', plugins: { legend: { display: false } } } });
+    </script>
+</body>
+</html>
