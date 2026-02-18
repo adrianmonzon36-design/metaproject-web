@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metaproject - Enterprise OS</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { background-color: #f6f8fa; font-family: 'Inter', sans-serif; overflow-x: hidden; color: #1e293b; }
+        .sidebar { width: 260px; background: white; border-right: 1px solid #e2e8f0; position: fixed; height: 100vh; transition: 0.3s; z-index: 50; left: 0; }
+        .sidebar.closed { left: -260px; }
+        .main-content { margin-left: 260px; padding: 24px; transition: 0.3s; min-height: 100vh; }
+        .main-content.expanded { margin-left: 0; }
+        .nav-link { display: flex; align-items: center; padding: 10px 16px; margin: 4px 12px; border-radius: 8px; color: #64748b; font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: 0.2s; }
+        .nav-link.active { background: #e0e7ff; color: #4338ca; font-weight: 700; }
+        .status-cell { color: white; font-weight: 600; font-size: 11px; text-align: center; padding: 10px; border: 2px solid white; cursor: pointer; }
+        .bg-monday-green { background-color: #00c875; }
+        .bg-monday-yellow { background-color: #ffcb00; }
+        .bg-monday-red { background-color: #df2f4a; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); z-index: 100; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+        .modal.active { display: flex; }
+        @media (max-width: 1024px) { .sidebar { left: -260px; } .sidebar.open { left: 0; } .main-content { margin-left: 0; } }
+    </style>
+</head>
+<body>
+
+    <div id="view-login" class="fixed inset-0 bg-white z-[200] flex items-center justify-center p-6">
+        <div class="w-full max-w-md text-center">
+            <h1 class="text-4xl font-black text-indigo-600 tracking-tighter italic mb-2">METAPROJECT</h1>
+            <p class="text-gray-400 text-sm mb-8">Gestor de Proyectos Profesional</p>
+            <div class="bg-white border border-gray-100 shadow-2xl rounded-3xl p-8 space-y-4">
+                <input type="text" placeholder="Número de empleado" class="w-full border-gray-200 border rounded-xl p-4 text-sm outline-none focus:ring-2 focus:ring-indigo-500">
+                <input type="password" placeholder="Contraseña" class="w-full border-gray-200 border rounded-xl p-4 text-sm outline-none focus:ring-2 focus:ring-indigo-500">
+                <button onclick="login()" class="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-indigo-700 transition">Continuar</button>
+                <div class="flex justify-between text-[10px] font-bold text-gray-400 uppercase tracking-widest pt-4">
+                    <a href="#">Crear cuenta</a>
+                    <a href="#">Olvidé mi contraseña</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="overlay" class="fixed inset-0 bg-black/20 hidden z-40" onclick="toggleMenu()"></div>
+
+    <aside id="sidebar" class="sidebar closed">
+        <div class="p-8"><h1 class="text-xl font-black text-indigo-600 italic">METAPROJECT</h1></div>
+        <nav>
+            <div onclick="showTab('dashboard')" class="nav-link active tab-btn" id="btn-dashboard">📊 Dashboard</div>
+            <div onclick="showTab('requerimientos')" class="nav-link tab-btn" id="btn-requerimientos">📝 Requerimientos</div>
+            <div onclick="showTab('kanban')" class="nav-link tab-btn" id="btn-kanban">📋 Kanban</div>
+            <div onclick="showTab('monday')" class="nav-link tab-btn" id="btn-monday">📅 Hoja de Ruta</div>
+            <div onclick="showTab('presupuesto')" class="nav-link tab-btn" id="btn-presupuesto">💰 Presupuesto</div>
+            <div onclick="showTab('excel')" class="nav-link tab-btn" id="btn-excel">📥 Carga de Excel</div>
+            <div onclick="showTab('admin')" class="nav-link tab-btn" id="btn-admin">⚙️ Administración</div>
+        </nav>
+        <button onclick="logout()" class="absolute bottom-8 left-8 text-xs font-bold text-rose-500">Cerrar Sesión</button>
+    </aside>
+
+    <main id="main-content" class="main-content expanded">
+        <header class="flex justify-between items-center mb-8">
+            <div class="flex items-center gap-4">
+                <button onclick="toggleMenu()" class="p-2 bg-white rounded-lg shadow-sm border border-gray-200">☰</button>
+                <h2 id="tab-title" class="text-xl font-extrabold text-gray-800">Dashboard</h2>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="openModal()" class="bg-indigo-600 text-white px-4 py-2 rounded-xl text-[10px] font-bold">+ NUEVO</button>
+            </div>
+        </header>
+
+        <div id="view-dashboard" class="tab-view">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm text-center">
+                    <p class="text-[10px] font-bold text-gray-400 uppercase">Usuarios</p>
+                    <p class="text-2xl font-black text-indigo-600">1.2k</p>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm text-center">
+                    <p class="text-[10px] font-bold text-gray-400 uppercase">Incidentes</p>
+                    <p class="text-2xl font-black text-rose-500">14</p>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm text-center">
+                    <p class="text-[10px] font-bold text-gray-400 uppercase">Completado</p>
+                    <p class="text-2xl font-black text-emerald-500">89%</p>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm text-center">
+                    <p class="text-[10px] font-bold text-gray-400 uppercase">Semanas</p>
+                    <p class="text-2xl font-black text-blue-500">04</p>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                    <h3 class="text-xs font-bold text-gray-400 mb-6 uppercase tracking-widest">Cronograma Ejecutivo</h3>
+                    <div class="space-y-4">
+                        <div class="h-8 bg-indigo-600 rounded-lg flex items-center px-4 text-[10px] text-white font-bold w-3/4 italic">Fase 1: Maquetado</div>
+                        <div class="h-8 bg-rose-500 rounded-lg flex items-center px-4 text-[10px] text-white font-bold w-full italic">Fase 2: Retraso Detectado</div>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                    <h3 class="text-xs font-bold text-gray-400 mb-4 uppercase">Muro Social</h3>
+                    <textarea class="w-full h-24 bg-gray-50 rounded-xl p-3 text-xs mb-2 border-none" placeholder="¿Qué hay de nuevo?"></textarea>
+                    <button class="w-full bg-indigo-600 text-white py-2 rounded-lg text-[10px] font-bold uppercase">Publicar</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-requerimientos" class="tab-view hidden">
+            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <div class="p-4 border-b border-gray-50 flex gap-4">
+                    <input type="text" placeholder="Buscar requerimiento..." class="bg-gray-50 border-none rounded-lg p-2 text-xs flex-1">
+                </div>
+                <div class="p-6 space-y-4">
+                    <div class="border-l-4 border-indigo-500 p-4 bg-gray-50 rounded-r-xl flex justify-between items-center">
+                        <div><p class="text-xs font-bold">REQ-001: Módulo de Autenticación</p><p class="text-[10px] text-gray-400">Solicitado por: Papas Fritas</p></div>
+                        <span class="text-[9px] font-bold bg-indigo-100 text-indigo-600 px-2 py-1 rounded uppercase">En Revisión</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-kanban" class="tab-view hidden">
+            <div class="flex gap-4 overflow-x-auto pb-4">
+                <div class="min-w-[280px] bg-gray-100/40 p-4 rounded-2xl">
+                    <h4 class="font-bold text-xs uppercase mb-4 text-gray-500">Backlog</h4>
+                    <div class="bg-white p-4 rounded-xl shadow-sm mb-3 border border-gray-100"><p class="text-xs font-bold text-gray-700">Ajuste de estilos en login</p></div>
+                </div>
+                <div class="min-w-[280px] bg-gray-100/40 p-4 rounded-2xl"><h4 class="font-bold text-xs uppercase mb-4 text-gray-500">En Proceso</h4></div>
+                <div class="min-w-[280px] bg-gray-100/40 p-4 rounded-2xl"><h4 class="font-bold text-xs uppercase mb-4 text-gray-500">Listo</h4></div>
+            </div>
+        </div>
+
+        <div id="view-monday" class="tab-view hidden">
+            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-x-auto">
+                <table class="w-full min-w-[800px]">
+                    <thead class="bg-gray-50 text-[10px] font-bold text-gray-400 uppercase">
+                        <tr><th class="p-4 text-left">Tarea</th><th class="p-4 text-center">Estado</th><th class="p-4 text-center">Prioridad</th><th class="p-4 text-center">Responsable</th></tr>
+                    </thead>
+                    <tbody class="text-sm divide-y divide-gray-50">
+                        <tr>
+                            <td class="p-4 font-bold">Diseño de Base de Datos</td>
+                            <td class="status-cell bg-monday-green">Listo</td>
+                            <td class="status-cell bg-indigo-400">Media</td>
+                            <td class="p-4 text-center"><span class="text-[10px] bg-gray-100 p-2 rounded-lg font-bold">Dev Team</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="view-presupuesto" class="tab-view hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center">
+                    <p class="text-xs font-bold text-gray-400 uppercase mb-4">Gasto Total</p>
+                    <p class="text-3xl font-black text-indigo-600">$45,000.00</p>
+                </div>
+                <div class="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                    <h3 class="text-xs font-bold text-gray-400 mb-4 uppercase">Desglose de Gastos</h3>
+                    <div class="flex justify-between border-b py-3 text-xs"><span>Licencias Software</span><span class="font-bold">$12,000</span></div>
+                    <div class="flex justify-between border-b py-3 text-xs"><span>Hardware Equipo</span><span class="font-bold">$33,000</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-excel" class="tab-view hidden text-center p-12">
+            <div class="bg-white border-2 border-dashed border-gray-200 rounded-3xl p-12 max-w-lg mx-auto">
+                <div class="text-4xl mb-4">📁</div>
+                <h3 class="font-bold text-gray-800 mb-2">Importar Datos</h3>
+                <p class="text-xs text-gray-400 mb-6">Arrastra tu archivo .xlsx para cargar hitos o actividades masivamente.</p>
+                <input type="file" id="excelFile" class="hidden">
+                <label for="excelFile" class="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold text-xs cursor-pointer">Seleccionar Archivo</label>
+            </div>
+        </div>
+
+        <div id="view-admin" class="tab-view hidden">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                    <h3 class="text-sm font-bold mb-4">Control de Usuarios</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-xl">
+                            <span class="text-xs font-bold">Admin_Fernando</span>
+                            <span class="text-[9px] bg-green-100 text-green-600 px-2 py-1 rounded font-bold">Super Admin</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                    <h3 class="text-sm font-bold mb-4">Configuración del Sistema</h3>
+                    <button class="w-full text-left text-xs p-3 border-b hover:bg-gray-50">Gestionar Grupos (UPAX, UiX/UX, etc.)</button>
+                    <button class="w-full text-left text-xs p-3 border-b hover:bg-gray-50">Log de errores del sistema</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="mainModal" class="modal px-4">
+        <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl p-6">
+            <h3 class="text-lg font-bold mb-4 italic">Nuevo Registro</h3>
+            <div class="space-y-4">
+                <input type="text" placeholder="Nombre..." class="w-full border rounded-xl p-3 text-sm">
+                <div class="grid grid-cols-2 gap-2">
+                    <input type="date" class="border rounded-xl p-3 text-xs">
+                    <input type="date" class="border rounded-xl p-3 text-xs">
+                </div>
+                <select class="w-full border rounded-xl p-3 text-sm">
+                    <option>Seleccionar Grupo</option>
+                    <option>UPAX</option>
+                    <option>UiX/UX</option>
+                </select>
+                <button onclick="closeModal()" class="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold text-xs">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Lógica de Inicio de Sesión
+        function login() {
+            document.getElementById('view-login').style.display = 'none';
+            document.getElementById('sidebar').classList.remove('closed');
+            document.getElementById('main-content').classList.remove('expanded');
+        }
+
+        function logout() {
+            document.getElementById('view-login').style.display = 'flex';
+            document.getElementById('sidebar').classList.add('closed');
+            document.getElementById('main-content').classList.add('expanded');
+        }
+
+        // Navegación
+        function showTab(tabId) {
+            document.querySelectorAll('.tab-view').forEach(v => v.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('view-' + tabId).classList.remove('hidden');
+            document.getElementById('btn-' + tabId).classList.add('active');
+            
+            const titles = { 'dashboard': 'Dashboard', 'requerimientos': 'Requerimientos', 'kanban': 'Kanban Board', 'monday': 'Hoja de Ruta', 'presupuesto': 'Control Presupuestal', 'excel': 'Carga Masiva', 'admin': 'Administración' };
+            document.getElementById('tab-title').innerText = titles[tabId];
+            if(window.innerWidth < 1024) toggleMenu();
+        }
+
+        function toggleMenu() {
+            const sb = document.getElementById('sidebar');
+            const mc = document.getElementById('main-content');
+            if (window.innerWidth > 1024) {
+                sb.classList.toggle('closed');
+                mc.classList.toggle('expanded');
+            } else {
+                sb.classList.toggle('open');
+                document.getElementById('overlay').classList.toggle('show');
+            }
+        }
+
+        function openModal() { document.getElementById('mainModal').classList.add('active'); }
+        function closeModal() { document.getElementById('mainModal').classList.remove('active'); }
+
+        // Gráfico
+        const ctx = document.getElementById('donaChart');
+        // (El gráfico se inicializa al cargar el dashboard si es necesario)
+    </script>
+</body>
+</html>
