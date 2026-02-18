@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metaproject - Plan</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+    <nav class="bg-[#1B365D] text-white p-4 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="font-bold text-xl">METAPROJECT</h1>
+            <div class="space-x-4 text-sm font-semibold">
+                <a href="index.html" class="hover:text-blue-300">DASHBOARD</a>
+                <a href="plan.html" class="text-blue-300 border-b-2 border-blue-300">PLAN</a>
+                <a href="requerimientos.html" class="hover:text-blue-300">REQ</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mx-auto p-6">
+        <h2 class="font-bold text-gray-700 mb-6">PLAN DE TRABAJO / GANTT</h2>
+        <div class="bg-white p-6 rounded-xl shadow-sm mb-6 overflow-x-auto">
+            <table class="w-full text-sm text-left">
+                <thead class="text-[10px] text-gray-400 uppercase">
+                    <tr><th class="pb-4">Hito</th><th class="pb-4">Inicio</th><th class="pb-4">Fin Plan</th><th class="pb-4">Fin Real</th></tr>
+                </thead>
+                <tbody class="text-gray-700">
+                    <tr class="border-t border-gray-50"><td class="py-4 font-bold">Maquetado App</td><td class="py-4">11/02</td><td class="py-4">17/02</td><td class="py-4 text-red-500 font-bold">20/02</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow-sm">
+            <h3 class="text-xs font-bold text-gray-400 uppercase mb-6">Cronograma de Desfase</h3>
+            <div class="space-y-4">
+                <div class="text-[10px] font-bold flex justify-between"><span>MAQUETADO</span><span class="text-red-500">+3 DÍAS</span></div>
+                <div class="h-3 bg-red-100 rounded-full w-3/4 relative"></div> <div class="h-3 bg-[#1B365D] rounded-full w-full -mt-3"></div> </div>
+        </div>
+    </main>
+</body>
+</html>
