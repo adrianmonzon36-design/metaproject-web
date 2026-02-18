@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MetaProject | Adrián Monzón</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --bg: #fdfeff;
+        }
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: #f8fafc; 
+            color: #1e293b;
+        }
+        
+        /* Efecto de elevación */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(241, 245, 249, 1);
+            border-radius: 24px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.04), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .glass-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.06);
+        }
+
+        /* Sidebar mejorado */
+        .sidebar { 
+            width: 280px; 
+            position: fixed; 
+            height: 100vh; 
+            background: white; 
+            z-index: 100; 
+            transition: all 0.4s ease;
+            border-right: 1px solid #f1f5f9;
+        }
+        @media (max-width: 1024px) { 
+            .sidebar { transform: translateX(-100%); } 
+            .sidebar.open { transform: translateX(0); box-shadow: 20px 0 50px rgba(0,0,0,0.1); } 
+        }
+
+        .main-content { margin-left: 280px; padding: 40px; min-height: 100vh; transition: 0.3s; }
+        @media (max-width: 1024px) { .main-content { margin-left: 0; padding: 20px; padding-top: 90px; } }
+
+        /* Links de navegación */
+        .nav-link { 
+            margin: 8px 20px;
+            padding: 12px 20px; 
+            border-radius: 12px;
+            display: flex; 
+            align-items: center;
+            font-size: 14px; 
+            color: #64748b; 
+            cursor: pointer; 
+            font-weight: 600;
+            transition: 0.2s;
+        }
+        .nav-link:hover { background: #f1f5f9; color: var(--primary); }
+        .nav-link.active { 
+            background: #eef2ff; 
+            color: var(--primary); 
+            box-shadow: inset 4px 0 0 var(--primary);
+        }
+
+        /* Login con estilo */
+        #login-screen {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Animaciones */
+        .fade-in { animation: fadeIn 0.5s ease forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 14px;
+            font-weight: 800;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.3s;
+        }
+        .btn-primary:hover { transform: scale(1.02); filter: brightness(1.1); }
+    </style>
+</head>
+<body>
+
+    <div id="login-screen">
+        <div class="glass-card w-full max-w-md p-10 bg-white shadow-2xl">
+            <div class="text-center mb-10">
+                <h1 class="text-3xl font-black text-indigo-600 tracking-tighter">MetaProject<span class="text-gray-300">.com</span></h1>
+                <p class="text-gray-400 text-[10px] font-bold uppercase tracking-widest mt-2">Business Control Panel</p>
+            </div>
+            <div class="space-y-4">
+                <input type="text" id="user-mail" placeholder="Usuario" class="w-full bg-gray-50 border-none p-4 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                <input type="password" id="user-pass" placeholder="••••••••" class="w-full bg-gray-50 border-none p-4 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                <button onclick="accessApp()" class="w-full btn-primary mt-4 shadow-lg shadow-indigo-100">Iniciar Sesión</button>
+            </div>
+            <p class="text-center text-[9px] text-gray-400 mt-10 font-bold uppercase">AMG Soluciones © 2026</p>
+        </div>
+    </div>
+
+    <aside id="sidebar" class="sidebar">
+        <div class="p-10 mb-6">
+            <h2 class="text-2xl font-black text-indigo-600 tracking-tighter">MetaProject</h2>
+        </div>
+        <nav>
+            <div onclick="switchSection('inicio')" class="nav-link active" id="l-inicio">Inicio</div>
+            <div onclick="switchSection('roadmap')" class="nav-link" id="l-roadmap">Hoja de ruta</div>
+            <div onclick="switchSection('kanban')" class="nav-link" id="l-kanban">Kanban</div>
+            <div onclick="switchSection('requerimientos')" class="nav-link" id="l-requerimientos">Requerimientos</div>
+            <div onclick="switchSection('presupuesto')" class="nav-link" id="l-presupuesto">Presupuesto</div>
+        </nav>
+        <div class="absolute bottom-10 left-10">
+            <p class="text-[10px] font-black text-gray-300 uppercase leading-loose">AMG Soluciones<br>Análisis<br><span class="text-indigo-600">Adrian Monzón</span></p>
+        </div>
+    </aside>
+
+    <header class="lg:hidden fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-md p-5 z-[90] flex justify-between items-center border-b">
+        <h1 class="font-black text-indigo-600 tracking-tighter">MetaProject</h1>
+        <button onclick="toggleMobileMenu()" class="p-2 bg-indigo-50 rounded-lg text-indigo-600">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/></svg>
+        </button>
+    </header>
+
+    <main class="main-content">
+        
+        <section id="sec-inicio" class="fade-in space-y-10">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div class="lg:col-span-4 space-y-6">
+                    <div class="glass-card p-10 text-center">
+                        <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 italic">Avance General</p>
+                        <div class="text-8xl font-black text-indigo-600 tracking-tighter">85<span class="text-3xl text-gray-300">%</span></div>
+                    </div>
+                    <div class="glass-card grid grid-cols-2 gap-4">
+                        <div class="p-4 bg-indigo-50 rounded-2xl text-center"><p class="text-[9px] font-bold text-indigo-500 uppercase">Hecho</p><p class="text-2xl font-black text-indigo-700">100</p></div>
+                        <div class="p-4 bg-gray-50 rounded-2xl text-center"><p class="text-[9px] font-bold text-gray-400 uppercase">Pendiente</p><p class="text-2xl font-black">50</p></div>
+                        <div class="p-4 bg-rose-50 rounded-2xl text-center"><p class="text-[9px] font-bold text-rose-400 uppercase">Atraso</p><p class="text-2xl font-black text-rose-600">50</p></div>
+                        <div class="p-4 bg-gray-50 rounded-2xl text-center"><p class="text-[9px] font-bold text-gray-400 uppercase">Proceso</p><p class="text-2xl font-black">50</p></div>
+                    </div>
+                </div>
+                <div class="lg:col-span-8 glass-card">
+                    <h3 class="text-xs font-black uppercase italic mb-10 text-gray-400">Cronograma Maquetado</h3>
+                    <div class="space-y-10" id="home-chart">
+                        </div>
+                </div>
+            </div>
+
+            <div class="glass-card">
+                <div class="flex justify-between items-center mb-10">
+                    <h3 class="text-xs font-black uppercase italic text-gray-400">Muro de publicaciones</h3>
+                    <button onclick="openModal('modal-post')" class="btn-primary text-[10px]">Nuevo Post</button>
+                </div>
+                <div id="muro-list" class="space-y-10">
+                    </div>
+            </div>
+        </section>
+
+        <section id="sec-roadmap" class="hidden fade-in space-y-6">
+            <div class="flex justify-between items-end mb-4">
+                <h3 class="text-xl font-black italic uppercase tracking-tighter">Hoja de Ruta</h3>
+            </div>
+            <div class="glass-card p-0 overflow-hidden">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-gray-50 text-[10px] font-black text-gray-400 uppercase">
+                        <tr><th class="p-6">Actividad</th><th class="p-6">Estado</th><th class="p-6">Grupo</th><th class="p-6">Cronograma</th></tr>
+                    </thead>
+                    <tbody id="roadmap-body" class="divide-y divide-gray-50">
+                        </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="sec-requerimientos" class="hidden fade-in space-y-8">
+            <div class="flex justify-between items-center">
+                <h3 class="text-xl font-black italic uppercase">Gestión de Requerimientos</h3>
+                <button onclick="openModal('modal-req')" class="btn-primary text-[10px]">+ Registrar</button>
+            </div>
+            <div id="req-list" class="space-y-8">
+                </div>
+        </section>
+
+        <section id="sec-presupuesto" class="hidden fade-in space-y-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="glass-card border-l-4 border-emerald-500 p-8">
+                    <p class="text-[10px] font-black text-gray-400 uppercase mb-2">Autorizado</p>
+                    <p class="text-4xl font-black text-emerald-600">$100.00</p>
+                </div>
+                <div class="glass-card border-l-4 border-rose-500 p-8">
+                    <p class="text-[10px] font-black text-gray-400 uppercase mb-2">Usado</p>
+                    <p class="text-4xl font-black text-rose-600">$<span id="total-used">0</span></p>
+                </div>
+                <div class="glass-card border-l-4 border-indigo-500 p-8">
+                    <p class="text-[10px] font-black text-gray-400 uppercase mb-2">Restante</p>
+                    <p class="text-4xl font-black text-indigo-600">$<span id="total-rest">100</span></p>
+                </div>
+            </div>
+            <div class="glass-card p-0 overflow-hidden">
+                <div class="p-6 border-b flex justify-between">
+                    <h3 class="text-xs font-black uppercase italic text-gray-400">Control de Pagos</h3>
+                    <button onclick="openModal('modal-cash')" class="text-indigo-600 font-black text-[10px] underline">REGISTRAR SALIDA</button>
+                </div>
+                <table class="w-full text-left text-xs">
+                    <tbody id="cash-table" class="divide-y divide-gray-50"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="sec-kanban" class="hidden fade-in space-y-6">
+            <h3 class="text-xl font-black italic uppercase">Kanban Board</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-gray-100/50 p-6 rounded-[32px] min-h-[500px] border-2 border-dashed border-gray-200">
+                    <p class="text-[10px] font-black text-gray-400 uppercase text-center mb-6">Pendiente</p>
+                    <div id="kb-todo" class="space-y-4"></div>
+                </div>
+                <div class="bg-indigo-50/30 p-6 rounded-[32px] min-h-[500px] border-2 border-dashed border-indigo-100">
+                    <p class="text-[10px] font-black text-indigo-400 uppercase text-center mb-6">En Curso</p>
+                    <div id="kb-doing" class="space-y-4"></div>
+                </div>
+                <div class="bg-emerald-50/30 p-6 rounded-[32px] min-h-[500px] border-2 border-dashed border-emerald-100">
+                    <p class="text-[10px] font-black text-emerald-400 uppercase text-center mb-6">Completado</p>
+                    <div id="kb-done" class="space-y-4"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div id="modal-post" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[200] hidden items-center justify-center p-4">
+        <div class="glass-card w-full max-w-lg p-8 scale-in bg-white">
+            <h3 class="text-xl font-black uppercase italic mb-6">¿Qué hay de nuevo?</h3>
+            <textarea id="p-text" class="w-full bg-gray-50 border-none p-6 rounded-2xl h-32 text-sm outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Escribe aquí..."></textarea>
+            <div class="flex gap-3 mt-6">
+                <button onclick="addPost()" class="flex-1 btn-primary">Publicar</button>
+                <button onclick="closeModal()" class="px-6 py-4 bg-gray-100 rounded-2xl text-[10px] font-black uppercase">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DATA MASTER
+        let db = JSON.parse(localStorage.getItem('mp_adrian_v1')) || {
+            posts: [{id: 1, text: '¡HOLA EQUIPO! ESTA ES LA NUEVA SUITE METAPROJECT.', user: 'Adrian Monzón', date: '18/02/2026', time: '4:15 PM'}],
+            reqs: [{id: 1, title: 'MAQUETADO DE LA APP', obj: 'TRAZABILIDAD TOTAL.', act: 'REPORTES MANUALES.', exp: 'APP AUTOMATIZADA.', user: 'Adrian Monzón', date: '18/02/2026'}],
+            hitos: [{id: 1, name: 'DISEÑO UI/UX', status: 'COMPLETO', group: 'DISEÑO', date: '18/02/2026'}],
+            cash: [{id: 1, name: 'AWS CLOUD', amt: 15.50, date: '18/02/2026'}]
+        };
+
+        function save() { localStorage.setItem('mp_adrian_v1', JSON.stringify(db)); render(); }
+
+        // LOGIN
+        function accessApp() {
+            document.getElementById('login-screen').classList.add('hidden');
+            render();
+        }
+
+        // NAVEGACIÓN
+        function switchSection(id) {
+            document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            document.getElementById('sec-' + id).classList.remove('hidden');
+            document.getElementById('l-' + id).classList.add('active');
+            if(window.innerWidth < 1024) toggleMobileMenu();
+        }
+
+        function toggleMobileMenu() {
+            document.getElementById('sidebar').classList.toggle('open');
+        }
+
+        function closeModal() {
+            document.getElementById('modal-post').classList.add('hidden');
+        }
+
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+            document.getElementById(id).classList.add('flex');
+        }
+
+        // ACCIONES
+        function addPost() {
+            const t = document.getElementById('p-text').value;
+            if(t) {
+                db.posts.unshift({id: Date.now(), text: t.toUpperCase(), user: 'Adrian Monzón', date: '18/02/2026', time: new Date().toLocaleTimeString()});
+                document.getElementById('p-text').value = '';
+                closeModal(); save();
+            }
+        }
+
+        // RENDERS
+        function render() {
+            // Muro
+            document.getElementById('muro-list').innerHTML = db.posts.map(p => `
+                <div class="flex gap-6 border-b border-gray-50 pb-8 last:border-0">
+                    <div class="w-14 h-14 bg-indigo-600 rounded-full flex-shrink-0 flex items-center justify-center text-white font-black shadow-lg shadow-indigo-100">AM</div>
+                    <div class="flex-1">
+                        <div class="flex justify-between items-center mb-2">
+                            <p class="text-sm font-black uppercase tracking-tight">${p.user} <span class="text-[9px] text-gray-300 ml-2">${p.date}</span></p>
+                            <span class="text-[8px] bg-indigo-50 text-indigo-500 font-black px-2 py-1 rounded">PRIORIDAD: ALTA</span>
+                        </div>
+                        <p class="text-[11px] font-bold text-gray-500 leading-relaxed">${p.text}</p>
+                    </div>
+                </div>
+            `).join('');
+
+            // Requerimientos
+            document.getElementById('req-list').innerHTML = db.reqs.map(r => `
+                <div class="glass-card border-l-[12px] border-indigo-600 p-8">
+                    <p class="text-xs font-black text-indigo-600 mb-6 uppercase italic">REQUERIMIENTO | ${r.title}</p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="bg-gray-50 p-6 rounded-3xl"><p class="text-[8px] font-black text-gray-300 uppercase mb-3 underline decoration-indigo-200">Objetivo</p><p class="text-[10px] font-bold text-gray-600">${r.obj}</p></div>
+                        <div class="bg-gray-50 p-6 rounded-3xl"><p class="text-[8px] font-black text-gray-300 uppercase mb-3 underline decoration-indigo-200">Situación Actual</p><p class="text-[10px] font-bold text-gray-600">${r.act}</p></div>
+                        <div class="bg-gray-50 p-6 rounded-3xl"><p class="text-[8px] font-black text-gray-300 uppercase mb-3 underline decoration-indigo-200">Situación Esperada</p><p class="text-[10px] font-bold text-gray-600">${r.exp}</p></div>
+                    </div>
+                </div>
+            `).join('');
+
+            // Presupuesto
+            let used = db.cash.reduce((s,c) => s + c.amt, 0);
+            document.getElementById('total-used').innerText = used.toFixed(2);
+            document.getElementById('total-rest').innerText = (100 - used).toFixed(2);
+            document.getElementById('cash-table').innerHTML = db.cash.map(c => `
+                <tr><td class="p-6 font-black uppercase tracking-tighter">${c.name}</td><td class="p-6 italic font-bold text-gray-400">Adrian Monzón</td><td class="p-6 font-black text-indigo-600">$${c.amt.toFixed(2)}</td><td class="p-6 font-bold text-gray-300">${c.date}</td></tr>
+            `).join('');
+
+            // Home Gantt
+            document.getElementById('home-chart').innerHTML = `
+                <div><p class="text-[10px] font-black text-gray-300 uppercase mb-3 italic">Desarrollo App</p><div class="h-3 bg-gray-50 rounded-full overflow-hidden shadow-inner"><div class="h-full bg-indigo-500 rounded-full" style="width: 75%"></div></div></div>
+                <div><p class="text-[10px] font-black text-gray-300 uppercase mb-3 italic">Testing Beta</p><div class="h-3 bg-gray-50 rounded-full overflow-hidden shadow-inner"><div class="h-full bg-indigo-300 rounded-full" style="width: 45%"></div></div></div>
+            `;
+        }
+
+        window.onload = render;
+    </script>
+</body>
+</html>
