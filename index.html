@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MetaProject.com | Business Control</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background: #f0f2f5; 
+            margin: 0;
+            overflow: hidden;
+        }
+
+        /* SOMBRAS Y ELEVACIÓN TIPO MAQUETA */
+        .glass-card {
+            background: white;
+            border-radius: 28px;
+            border: 1px solid rgba(255,255,255,0.7);
+            box-shadow: 0 20px 40px -10px rgba(0,0,0,0.05), 0 10px 20px -5px rgba(0,0,0,0.02);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .glass-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 30px 60px -12px rgba(0,0,0,0.1);
+        }
+
+        /* LOGIN OVERLAY */
+        #login-overlay {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.6s ease-in-out;
+        }
+
+        .sidebar {
+            width: 280px;
+            background: white;
+            height: 100vh;
+            position: fixed;
+            border-right: 1px solid #e2e8f0;
+            z-index: 100;
+        }
+
+        .main-view {
+            margin-left: 280px;
+            height: 100vh;
+            overflow-y: auto;
+            padding: 40px;
+            display: none; /* Se activa tras login */
+        }
+
+        .nav-item {
+            margin: 10px 20px;
+            padding: 15px 20px;
+            border-radius: 16px;
+            color: #64748b;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.3s;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+        }
+        .nav-item.active {
+            background: #eef2ff;
+            color: #4f46e5;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.1);
+        }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: slideUp 0.5s ease; }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 8px;
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="login-overlay">
+        <div class="bg-white p-12 rounded-[40px] shadow-2xl w-full max-w-md text-center">
+            <h1 class="text-4xl font-black text-indigo-600 tracking-tighter mb-2">MetaProject</h1>
+            <p class="text-gray-400 font-bold text-[10px] uppercase tracking-[0.2em] mb-10">Acceso exclusivo AMG Soluciones</p>
+            
+            <div class="space-y-4 mb-8">
+                <input type="text" placeholder="Usuario" class="w-full p-4 bg-gray-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 font-semibold text-sm">
+                <input type="password" placeholder="Contraseña" class="w-full p-4 bg-gray-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 font-semibold text-sm">
+            </div>
+
+            <button onclick="bypassLogin()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-4 rounded-2xl shadow-xl shadow-indigo-200 transition-all transform active:scale-95 uppercase text-xs">
+                Iniciar Sesión
+            </button>
+        </div>
+    </div>
+
+    <aside class="sidebar">
+        <div class="p-10 mb-8">
+            <h2 class="text-2xl font-black text-indigo-600 tracking-tighter">MetaProject</h2>
+        </div>
+        <nav>
+            <div onclick="tab('inicio')" id="btn-inicio" class="nav-item active">Inicio</div>
+            <div onclick="tab('roadmap')" id="btn-roadmap" class="nav-item">Hoja de ruta</div>
+            <div onclick="tab('kanban')" id="btn-kanban" class="nav-item">Kanban</div>
+            <div onclick="tab('requerimientos')" id="btn-requerimientos" class="nav-item">Requerimientos</div>
+            <div onclick="tab('presupuesto')" id="btn-presupuesto" class="nav-item">Presupuesto</div>
+        </nav>
+        <div class="absolute bottom-10 left-10 text-[10px] font-bold text-gray-300 uppercase leading-relaxed">
+            AMG Soluciones<br>Análisis<br><span class="text-indigo-400 font-black">Panel de Admin</span>
+        </div>
+    </aside>
+
+    <main id="main-ui" class="main-view">
+        
+        <div id="tab-inicio" class="tab-content active space-y-10">
+            <div class="grid grid-cols-12 gap-8">
+                <div class="col-span-4 space-y-6">
+                    <div class="glass-card p-10 text-center">
+                        <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 italic underline underline-offset-8 decoration-indigo-200">% de avance</p>
+                        <div class="text-8xl font-black text-indigo-600 tracking-tighter">85<span class="text-3xl text-gray-300">%</span></div>
+                    </div>
+                    <div class="glass-card p-8 grid grid-cols-2 gap-4">
+                        <div class="bg-indigo-50 p-4 rounded-2xl text-center"><p class="text-[9px] font-bold text-indigo-500 uppercase">Hecho</p><p class="text-2xl font-black">100</p></div>
+                        <div class="bg-rose-50 p-4 rounded-2xl text-center"><p class="text-[9px] font-bold text-rose-500 uppercase">Atraso</p><p class="text-2xl font-black">50</p></div>
+                        <div class="bg-gray-50 p-4 rounded-2xl text-center"><p class="text-[9px] font-bold text-gray-400 uppercase">Proceso</p><p class="text-2xl font-black">50</p></div>
+                        <div class="bg-gray-50 p-4 rounded-2xl text-center"><p class="text-[9px] font-bold text-gray-400 uppercase">Espera</p><p class="text-2xl font-black">50</p></div>
+                    </div>
+                </div>
+                <div class="col-span-8 glass-card p-10">
+                    <h3 class="text-xs font-black uppercase italic text-gray-400 mb-8">Maquetado de la App - Cronograma</h3>
+                    <div class="space-y-10">
+                        <div class="h-4 w-full bg-gray-100 rounded-full overflow-hidden shadow-inner"><div class="h-full bg-indigo-600 shadow-lg" style="width: 80%"></div></div>
+                        <div class="h-4 w-full bg-gray-100 rounded-full overflow-hidden shadow-inner"><div class="h-full bg-indigo-300 shadow-lg" style="width: 40%"></div></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="glass-card p-10">
+                <h3 class="text-xs font-black uppercase italic text-gray-400 mb-10">Muro de publicaciones</h3>
+                <div class="flex gap-6 border-b border-gray-50 pb-8">
+                    <div class="w-14 h-14 bg-indigo-600 rounded-full flex items-center justify-center text-white font-black shadow-lg shadow-indigo-200">AM</div>
+                    <div>
+                        <p class="text-sm font-black uppercase">Adrian Monzón <span class="text-[10px] text-gray-300 ml-2">18/02/2026</span></p>
+                        <p class="text-xs font-bold text-gray-500 mt-3 leading-relaxed">¡HOLA, EQUIPO! HEMOS CREADO ESTA HERRAMIENTA PARA TRABAJAR DE FORMA MÁS ORGANIZADA.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-requerimientos" class="tab-content space-y-8">
+            <div class="flex justify-between items-center">
+                <h3 class="text-xl font-black italic uppercase">Módulo Requerimientos</h3>
+                <button class="bg-indigo-600 text-white px-8 py-3 rounded-2xl text-[10px] font-black uppercase shadow-xl shadow-indigo-100">+ Nuevo REQ</button>
+            </div>
+            
+            <div class="glass-card border-l-[16px] border-indigo-600 p-10">
+                <div class="flex gap-4 mb-8">
+                    <div class="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center text-white font-black text-xs">AM</div>
+                    <div>
+                        <p class="text-xs font-black uppercase tracking-tighter">Adrian Monzón <span class="text-gray-300 ml-2">18/02/2026</span></p>
+                        <p class="text-indigo-600 font-black text-[11px] uppercase tracking-widest">REQUERIMIENTO | FLUJO DE ENTREGA</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-6">
+                    <div class="bg-gray-50 p-6 rounded-3xl"><p class="text-[9px] font-black text-gray-400 uppercase underline mb-3">Objetivo</p><p class="text-[11px] font-bold text-gray-600">Implementar trazabilidad en tiempo real.</p></div>
+                    <div class="bg-gray-50 p-6 rounded-3xl"><p class="text-[9px] font-black text-gray-400 uppercase underline mb-3">Situación Actual</p><p class="text-[11px] font-bold text-gray-600">Procesos manuales en Excel.</p></div>
+                    <div class="bg-gray-50 p-6 rounded-3xl"><p class="text-[9px] font-black text-gray-400 uppercase underline mb-3">Situación Esperada</p><p class="text-[11px] font-bold text-gray-600">Dashboard automatizado 100%.</p></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-presupuesto" class="tab-content space-y-8">
+            <div class="grid grid-cols-3 gap-8">
+                <div class="glass-card p-10 border-b-8 border-emerald-400"><p class="text-[10px] font-black text-gray-400 uppercase mb-2">Autorizado</p><p class="text-5xl font-black text-emerald-600 tracking-tighter">$100</p></div>
+                <div class="glass-card p-10 border-b-8 border-rose-400"><p class="text-[10px] font-black text-gray-400 uppercase mb-2">Usado</p><p class="text-5xl font-black text-rose-600 tracking-tighter">$50</p></div>
+                <div class="glass-card p-10 border-b-8 border-indigo-400"><p class="text-[10px] font-black text-gray-400 uppercase mb-2">Restante</p><p class="text-5xl font-black text-indigo-600 tracking-tighter">$50</p></div>
+            </div>
+            <div class="glass-card p-0 overflow-hidden">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-gray-50 text-[10px] font-black text-gray-400 uppercase">
+                        <tr><th class="p-6">Concepto</th><th class="p-6">Autorizador</th><th class="p-6">Monto</th><th class="p-6">Fecha</th></tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-50 font-bold">
+                        <tr><td class="p-6 uppercase">Hosting MetaProject</td><td class="p-6 italic">Adrian Monzón</td><td class="p-6 font-black">$25.00</td><td class="p-6 text-gray-300">18/02/2026</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // BYPASS LOGIN REAL
+        function bypassLogin() {
+            const login = document.getElementById('login-overlay');
+            const main = document.getElementById('main-ui');
+            
+            login.style.opacity = '0';
+            login.style.transform = 'scale(1.1)';
+            
+            setTimeout(() => {
+                login.style.display = 'none';
+                main.style.display = 'block';
+                document.body.style.overflowY = 'auto';
+            }, 600);
+        }
+
+        // NAVEGACIÓN ENTRE PESTAÑAS
+        function tab(name) {
+            // Ocultar todo
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            
+            // Mostrar seleccionado
+            document.getElementById('tab-' + name).classList.add('active');
+            document.getElementById('btn-' + name).classList.add('active');
+            
+            // Scroll arriba suave
+            document.getElementById('main-ui').scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>
