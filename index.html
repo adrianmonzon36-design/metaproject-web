@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MetaProject.com - Adrián Monzón</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #fff; color: #1e293b; }
+        
+        /* Layout Responsivo */
+        .sidebar { width: 260px; border-right: 1px solid #f1f5f9; position: fixed; height: 100vh; background: #fff; z-index: 100; transition: transform 0.3s ease; }
+        @media (max-width: 1024px) { .sidebar { transform: translateX(-100%); } .sidebar.open { transform: translateX(0); } }
+        
+        .main-content { margin-left: 260px; padding: 40px; transition: margin 0.3s ease; min-height: 100vh; }
+        @media (max-width: 1024px) { .main-content { margin-left: 0; padding: 20px; padding-top: 80px; } }
+
+        /* Navegación Estilo PPT */
+        .nav-link { padding: 12px 30px; display: block; font-size: 15px; color: #64748b; cursor: pointer; transition: 0.2s; font-weight: 500; }
+        .nav-link.active { color: #4f46e5; font-weight: 800; border-right: 4px solid #4f46e5; background: #f5f3ff; }
+        
+        .card { background: white; border: 1px solid #f1f5f9; border-radius: 20px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); }
+        .tab-content { display: none; animation: fadeIn 0.3s ease; }
+        .tab-content.active { display: block; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Kanban Columns */
+        .kanban-col { background: #f8fafc; border-radius: 16px; padding: 15px; min-height: 400px; width: 100%; }
+    </style>
+</head>
+<body>
+
+    <button onclick="toggleMenu()" class="lg:hidden fixed top-5 left-5 z-[110] bg-indigo-600 text-white p-3 rounded-2xl shadow-xl">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/></svg>
+    </button>
+
+    <aside id="sidebar" class="sidebar">
+        <div class="p-10 mb-4">
+            <h1 class="text-xl font-black text-indigo-600 tracking-tighter">MetaProject.com</h1>
+        </div>
+        <nav>
+            <div onclick="showTab('inicio')" class="nav-link active" id="nav-inicio">Inicio</div>
+            <div onclick="showTab('roadmap')" class="nav-link" id="nav-roadmap">Hoja de ruta</div>
+            <div onclick="showTab('kanban')" class="nav-link" id="nav-kanban">Kanban</div>
+            <div onclick="showTab('requerimientos')" class="nav-link" id="nav-requerimientos">Requerimientos</div>
+            <div onclick="showTab('presupuesto')" class="nav-link" id="nav-presupuesto">Presupuesto</div>
+        </nav>
+        <div class="absolute bottom-10 left-10 text-[10px] font-bold text-gray-300 uppercase tracking-widest leading-relaxed">
+            AMG Soluciones<br>Análisis<br>Panel de Admin
+        </div>
+    </aside>
+
+    <div id="overlay" onclick="toggleMenu()" class="fixed inset-0 bg-black/20 z-[90] hidden"></div>
+
+    <main class="main-content">
+        
+        <div id="tab-inicio" class="tab-content active space-y-8">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div class="lg:col-span-4 space-y-6">
+                    <div class="card text-center">
+                        <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 italic">% DE AVANCE</p>
+                        <div class="text-7xl font-black text-indigo-600">85<span class="text-2xl">%</span></div>
+                    </div>
+                    <div class="card">
+                        <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest text-center mb-6 underline">RESUMEN ACTIVIDADES</p>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-indigo-50 p-4 rounded-2xl text-center"><p class="text-[9px] font-bold text-indigo-400">HECHO</p><p class="text-2xl font-black">100</p></div>
+                            <div class="bg-gray-50 p-4 rounded-2xl text-center"><p class="text-[9px] font-bold text-gray-400">PENDIENTE</p><p class="text-2xl font-black">50</p></div>
+                            <div class="bg-rose-50 p-4 rounded-2xl text-center"><p class="text-[9px] font-bold text-rose-400">ATRASO</p><p class="text-2xl font-black text-rose-600">50</p></div>
+                            <div class="bg-gray-50 p-4 rounded-2xl text-center"><p class="text-[9px] font-bold text-gray-400">PROCESO</p><p class="text-2xl font-black">50</p></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="lg:col-span-8 card">
+                    <h3 class="text-xs font-black uppercase italic mb-8">Maquetado de la app - Cronograma</h3>
+                    <div class="space-y-8">
+                        <div>
+                            <p class="text-[10px] font-black text-gray-400 uppercase mb-2">Desarrollo de la app</p>
+                            <div class="h-4 bg-gray-100 rounded-full overflow-hidden"><div class="w-3/4 h-full bg-indigo-600 rounded-full"></div></div>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-black text-gray-400 uppercase mb-2">Pruebas de la app</p>
+                            <div class="h-4 bg-gray-100 rounded-full overflow-hidden"><div class="w-1/2 h-full bg-indigo-400 rounded-full"></div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card space-y-6">
+                <h3 class="text-xs font-black uppercase italic">Muro de publicaciones</h3>
+                <div class="flex gap-4 p-4 bg-gray-50 rounded-2xl">
+                    <div class="w-12 h-12 bg-indigo-600 rounded-full flex-shrink-0 flex items-center justify-center text-white font-black text-xs">AM</div>
+                    <div class="flex-1">
+                        <p class="text-sm font-black uppercase tracking-tighter">Adrian Monzón <span class="text-[10px] font-bold text-gray-300 ml-2">18/02/2026 12:19 P.M.</span></p>
+                        <p class="text-xs font-bold text-gray-600 mt-2">¡HOLA, EQUIPO! HEMOS CREADO ESTA HERRAMIENTA CON LA INTENCIÓN DE TRABAJAR DE FORMA MÁS ORGANIZADA.</p>
+                        <div class="mt-4 flex gap-6 text-[9px] font-black text-gray-400 uppercase">
+                            <button class="hover:text-indigo-600">Reaccionar</button>
+                            <button class="hover:text-indigo-600">Comentar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-roadmap" class="tab-content space-y-6">
+            <div class="flex justify-between items-center">
+                <h3 class="text-sm font-black uppercase italic">Hoja de Ruta (Hitos)</h3>
+                <button class="bg-indigo-600 text-white px-6 py-2 rounded-xl text-[10px] font-black uppercase">+ Nuevo Hito</button>
+            </div>
+            <div class="card overflow-x-auto p-0 border-none">
+                <table class="w-full text-xs text-left min-w-[700px]">
+                    <thead class="bg-gray-50 text-[10px] font-black text-gray-400 uppercase">
+                        <tr><th class="p-5">Hito / Actividad</th><th class="p-5">Estado</th><th class="p-5">Grupo</th><th class="p-5">Inicio</th><th class="p-5">Fin</th></tr>
+                    </thead>
+                    <tbody class="divide-y">
+                        <tr>
+                            <td class="p-5 font-black uppercase">Maquetado Inicial</td>
+                            <td class="p-5"><span class="bg-indigo-500 text-white px-3 py-1 rounded text-[9px] font-black uppercase">En Tiempo</span></td>
+                            <td class="p-5 font-bold italic text-indigo-400">UPAX</td>
+                            <td class="p-5 text-gray-400 font-bold">18/02/2026</td>
+                            <td class="p-5 text-gray-400 font-bold">28/02/2026</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="tab-kanban" class="tab-content space-y-6">
+            <h3 class="text-sm font-black uppercase italic mb-6">Tablero de Tareas</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="kanban-col"><p class="text-[10px] font-black text-gray-400 uppercase mb-4 text-center">Por hacer</p></div>
+                <div class="kanban-col"><p class="text-[10px] font-black text-gray-400 uppercase mb-4 text-center">En Proceso</p></div>
+                <div class="kanban-col"><p class="text-[10px] font-black text-gray-400 uppercase mb-4 text-center">Finalizado</p></div>
+            </div>
+        </div>
+
+        <div id="tab-requerimientos" class="tab-content space-y-6">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-sm font-black uppercase italic">Definición de Requerimientos</h3>
+                <button class="bg-indigo-600 text-white px-6 py-2 rounded-xl text-[10px] font-black uppercase">+ Registrar REQ</button>
+            </div>
+            <div class="card border-l-8 border-indigo-600">
+                <div class="flex gap-4 mb-6">
+                    <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center font-black text-xs">AM</div>
+                    <div>
+                        <p class="text-xs font-black uppercase">Adrian Monzón <span class="text-[10px] text-gray-400 font-bold ml-2">18/02/2026</span></p>
+                        <p class="text-[11px] font-black text-indigo-600 mt-1 uppercase">REQ: FLUJO DE ENTREGA DENTRO DE LA APP</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-gray-50 p-4 rounded-2xl">
+                        <p class="text-[9px] font-black uppercase underline text-gray-400 mb-2">Objetivo</p>
+                        <p class="text-[10px] font-bold uppercase leading-relaxed">Implementar trazabilidad en tiempo real.</p>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-2xl">
+                        <p class="text-[9px] font-black uppercase underline text-gray-400 mb-2">Situación Actual</p>
+                        <p class="text-[10px] font-bold uppercase leading-relaxed">Reportes manuales en Excel.</p>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-2xl">
+                        <p class="text-[9px] font-black uppercase underline text-gray-400 mb-2">Situación Esperada</p>
+                        <p class="text-[10px] font-bold uppercase leading-relaxed">Dashboard automatizado con alertas.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-presupuesto" class="tab-content space-y-8">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
+                <div class="card bg-emerald-50 border-emerald-100"><p class="text-[10px] font-black text-emerald-600 uppercase">Autorizado</p><p class="text-4xl font-black text-emerald-700 mt-2">$100</p></div>
+                <div class="card bg-rose-50 border-rose-100"><p class="text-[10px] font-black text-rose-600 uppercase">Usado</p><p class="text-4xl font-black text-rose-700 mt-2">$50</p></div>
+                <div class="card bg-indigo-50 border-indigo-100"><p class="text-[10px] font-black text-indigo-600 uppercase">Restante</p><p class="text-4xl font-black text-indigo-700 mt-2">$50</p></div>
+            </div>
+            <div class="card p-0 overflow-hidden">
+                <table class="w-full text-xs text-left">
+                    <thead class="bg-gray-50 text-[10px] font-black text-gray-400 uppercase">
+                        <tr><th class="p-5">Concepto</th><th class="p-5">Autorizador</th><th class="p-5">Monto</th><th class="p-5">Fecha</th></tr>
+                    </thead>
+                    <tbody class="divide-y">
+                        <tr><td class="p-5 font-black uppercase">Licencias MetaProject</td><td class="p-5 italic font-bold">Adrian Monzón</td><td class="p-5 font-black">$25.00</td><td class="p-5 font-bold">18/02/2026</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // SISTEMA DE NAVEGACIÓN REAL
+        function showTab(id) {
+            // Ocultar todas las pestañas
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            // Quitar clase active de los links
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            
+            // Mostrar la seleccionada
+            document.getElementById('tab-' + id).classList.add('active');
+            document.getElementById('nav-' + id).classList.add('active');
+
+            // Cerrar menú en móvil tras elegir
+            if (window.innerWidth < 1024) toggleMenu();
+        }
+
+        function toggleMenu() {
+            const side = document.getElementById('sidebar');
+            const over = document.getElementById('overlay');
+            side.classList.toggle('open');
+            over.classList.toggle('hidden');
+        }
+
+        // Evitar que el clic en el overlay o sidebar rompa el flujo
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('overlay')) toggleMenu();
+        }
+    </script>
+</body>
+</html>
