@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>MetaProject | Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #0f172a; color: #f1f5f9; }
+        .sidebar { width: 260px; position: fixed; height: 100vh; background: #020617; border-right: 1px solid #1e293b; }
+        .main { margin-left: 260px; }
+        .top-bar { height: 70px; background: #020617; border-bottom: 1px solid #1e293b; display: flex; align-items: center; justify-content: flex-end; padding: 0 40px; gap: 25px; }
+        .glass { background: #1e293b; border: 1px solid #334155; border-radius: 24px; }
+        .mention { color: #3b82f6; font-weight: 800; }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="p-8 mb-6"><h2 class="text-xl font-black text-blue-500 italic tracking-tighter">MetaProject</h2></div>
+        <nav class="space-y-1">
+            <a href="inicio.html" class="block p-4 pl-10 font-bold text-blue-500 bg-slate-900 border-r-4 border-blue-500 uppercase text-[10px]">Inicio</a>
+            <a href="roadmap.html" class="block p-4 pl-10 font-bold text-slate-500 hover:text-white uppercase text-[10px]">Hoja de ruta</a>
+            <a href="kanban.html" class="block p-4 pl-10 font-bold text-slate-500 hover:text-white uppercase text-[10px]">Kanban</a>
+            <a href="requerimientos.html" class="block p-4 pl-10 font-bold text-slate-500 hover:text-white uppercase text-[10px]">Requerimientos</a>
+            <a href="presupuesto.html" class="block p-4 pl-10 font-bold text-slate-500 hover:text-white uppercase text-[10px]">Presupuesto</a>
+        </nav>
+    </aside>
+
+    <div class="main">
+        <div class="top-bar">
+            <div class="relative"><i data-lucide="bell" class="text-slate-400 w-5 h-5"></i><span class="absolute -top-1 -right-1 bg-rose-500 text-[8px] px-1 rounded-full font-black">3</span></div>
+            <div class="flex items-center gap-3 border-l border-slate-800 pl-6">
+                <div class="text-right"><p class="text-[10px] font-black uppercase text-white">Adrian Monzón</p><p class="text-[8px] font-bold text-blue-500 uppercase">UX Group</p></div>
+                <i data-lucide="user" class="bg-blue-600 p-1.5 rounded-lg w-8 h-8"></i>
+            </div>
+        </div>
+
+        <div class="p-10 space-y-8">
+            <div class="grid grid-cols-12 gap-6">
+                <div class="col-span-3 glass p-8 text-center flex flex-col justify-center">
+                    <p class="text-[9px] font-black text-slate-500 uppercase mb-2">% Avance Total</p>
+                    <p class="text-6xl font-black text-blue-500 tracking-tighter">85%</p>
+                </div>
+                <div class="col-span-9 glass p-8">
+                    <p class="text-[9px] font-black text-slate-500 uppercase mb-6 italic">Resumen de estatus de actividades</p>
+                    <div class="flex gap-3 overflow-x-auto pb-2">
+                        <div class="bg-slate-900 px-4 py-3 rounded-xl border border-emerald-500/30 min-w-[120px] text-center"><p class="text-emerald-500 font-black text-lg">100</p><p class="text-[7px] uppercase font-bold text-slate-500">Completadas</p></div>
+                        <div class="bg-slate-900 px-4 py-3 rounded-xl border border-blue-500/30 min-w-[120px] text-center"><p class="text-blue-500 font-black text-lg">50</p><p class="text-[7px] uppercase font-bold text-slate-500">En proceso</p></div>
+                        <div class="bg-slate-900 px-4 py-3 rounded-xl border border-amber-500/30 min-w-[120px] text-center"><p class="text-amber-500 font-black text-lg">50</p><p class="text-[7px] uppercase font-bold text-slate-500">Pendientes</p></div>
+                        <div class="bg-slate-900 px-4 py-3 rounded-xl border border-rose-500/30 min-w-[120px] text-center"><p class="text-rose-500 font-black text-lg">50</p><p class="text-[7px] uppercase font-bold text-slate-500">Atrasadas</p></div>
+                        <div class="bg-slate-900 px-4 py-3 rounded-xl border border-slate-700 min-w-[120px] text-center"><p class="text-slate-400 font-black text-lg">50</p><p class="text-[7px] uppercase font-bold text-slate-500">Por iniciar</p></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass p-10">
+                <h3 class="text-[10px] font-black uppercase text-slate-500 mb-8 border-b border-slate-800 pb-4">Plan de trabajo - Gantt</h3>
+                <div class="space-y-6">
+                    <div class="grid grid-cols-12 items-center gap-4">
+                        <span class="col-span-2 text-[9px] font-black uppercase text-slate-400">Desarrollo App</span>
+                        <div class="col-span-10 bg-slate-900 h-2 rounded-full"><div class="bg-blue-600 h-full w-[85%] rounded-full"></div></div>
+                    </div>
+                    <div class="grid grid-cols-12 items-center gap-4">
+                        <span class="col-span-2 text-[9px] font-black uppercase text-slate-400">Pruebas QA</span>
+                        <div class="col-span-10 bg-slate-900 h-2 rounded-full"><div class="bg-blue-400 h-full w-[40%] rounded-full"></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass p-10">
+                <div class="flex justify-between items-center mb-8"><h3 class="text-[10px] font-black uppercase text-slate-500 italic">Muro de publicaciones</h3><button class="bg-blue-600 px-6 py-2 rounded-full text-[9px] font-black uppercase">+ Post</button></div>
+                <div class="space-y-8">
+                    <div class="flex gap-6">
+                        <div class="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center font-black text-xs">AM</div>
+                        <div class="flex-1">
+                            <p class="text-[10px] font-black uppercase text-blue-400">Adrian Monzón <span class="text-slate-600 ml-2">18/02/2026</span></p>
+                            <p class="text-xs text-slate-400 mt-2">Hola <span class="mention">@todos</span>, favor de revisar el estatus en <span class="mention">@UPAX_Group</span>.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>lucide.createIcons();</script>
+</body>
+</html>
