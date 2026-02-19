@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>MetaProject | Inicio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #0f172a; color: #f1f5f9; }
+        .sidebar { width: 260px; position: fixed; height: 100vh; background: #020617; border-right: 1px solid #1e293b; }
+        .main { margin-left: 260px; }
+        .top-bar { height: 70px; background: #020617; border-bottom: 1px solid #1e293b; display: flex; align-items: center; justify-content: flex-end; padding: 0 40px; gap: 25px; }
+        .glass { background: #1e293b; border: 1px solid #334155; border-radius: 24px; }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="p-8 mb-6"><h2 class="text-xl font-black text-blue-500 tracking-tighter">MetaProject</h2></div>
+        <nav>
+            <a href="inicio.html" class="p-4 pl-10 block font-bold text-blue-500 bg-slate-900 border-r-4 border-blue-500 uppercase text-xs">Inicio</a>
+            <a href="roadmap.html" class="p-4 pl-10 block font-bold text-slate-500 hover:text-white uppercase text-xs">Hoja de ruta</a>
+            <a href="kanban.html" class="p-4 pl-10 block font-bold text-slate-500 hover:text-white uppercase text-xs">Kanban</a>
+            <a href="requerimientos.html" class="p-4 pl-10 block font-bold text-slate-500 hover:text-white uppercase text-xs">Requerimientos</a>
+            <a href="presupuesto.html" class="p-4 pl-10 block font-bold text-slate-500 hover:text-white uppercase text-xs">Presupuesto</a>
+        </nav>
+    </aside>
+
+    <div class="main">
+        <div class="top-bar">
+            <i data-lucide="bell" class="text-slate-400 w-5 h-5 cursor-pointer"></i>
+            <div class="flex items-center gap-3 border-l border-slate-800 pl-6">
+                <span class="text-[10px] font-black uppercase text-slate-400">Adrian Monzón</span>
+                <i data-lucide="user" class="bg-blue-600 p-1.5 rounded-lg w-8 h-8 cursor-pointer"></i>
+            </div>
+        </div>
+
+        <div class="p-10 space-y-8">
+            <div class="grid grid-cols-12 gap-6">
+                <div class="col-span-3 glass p-8 text-center border-b-4 border-blue-500">
+                    <p class="text-[10px] font-black text-slate-500 uppercase mb-2">Avance Total</p>
+                    <p class="text-5xl font-black text-blue-500">85%</p>
+                </div>
+                <div class="col-span-9 glass p-8">
+                    <p class="text-[10px] font-black text-slate-500 uppercase mb-6">Resumen de Estatus</p>
+                    <div class="grid grid-cols-5 gap-4">
+                        <div class="bg-slate-900 p-4 rounded-xl text-center"><p class="text-emerald-500 font-black text-xl">100</p><p class="text-[8px] uppercase text-slate-500 font-bold">Hecho</p></div>
+                        <div class="bg-slate-900 p-4 rounded-xl text-center"><p class="text-blue-500 font-black text-xl">50</p><p class="text-[8px] uppercase text-slate-500 font-bold">En Proceso</p></div>
+                        <div class="bg-slate-900 p-4 rounded-xl text-center"><p class="text-amber-500 font-black text-xl">50</p><p class="text-[8px] uppercase text-slate-500 font-bold">Pendiente</p></div>
+                        <div class="bg-slate-900 p-4 rounded-xl text-center"><p class="text-rose-500 font-black text-xl">50</p><p class="text-[8px] uppercase text-slate-500 font-bold">Atraso</p></div>
+                        <div class="bg-slate-900 p-4 rounded-xl text-center"><p class="text-slate-400 font-black text-xl">50</p><p class="text-[8px] uppercase text-slate-500 font-bold">Espera</p></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass p-10">
+                <div class="flex justify-between items-center mb-8 border-b border-slate-700 pb-6">
+                    <h3 class="text-xs font-black uppercase text-slate-400 italic tracking-widest">Muro de publicaciones</h3>
+                    <button onclick="document.getElementById('post-modal').classList.remove('hidden')" class="bg-blue-600 px-6 py-2 rounded-full text-[10px] font-black uppercase">+ Nueva Publicación</button>
+                </div>
+                
+                <div id="muro-list" class="space-y-10">
+                    <div class="flex gap-6 group">
+                        <div class="w-14 h-14 bg-slate-800 rounded-full flex items-center justify-center font-black border border-slate-700">AM</div>
+                        <div class="flex-1">
+                            <div class="flex justify-between">
+                                <p class="text-xs font-black uppercase text-blue-400">Adrian Monzón <span class="text-[10px] text-slate-500 ml-2">18/02/2026</span></p>
+                                <div class="flex gap-3 opacity-0 group-hover:opacity-100 transition">
+                                    <i data-lucide="edit-2" class="w-3.5 h-3.5 text-slate-500 cursor-pointer"></i>
+                                    <i data-lucide="trash" class="w-3.5 h-3.5 text-rose-500 cursor-pointer"></i>
+                                </div>
+                            </div>
+                            <p class="text-sm text-slate-400 mt-2 leading-relaxed italic">¡Bienvenidos a la suite MetaProject!</p>
+                            <div class="flex gap-6 mt-4 text-[10px] font-black text-slate-500 uppercase">
+                                <button onclick="this.classList.toggle('text-blue-500')" class="hover:text-blue-500"><i data-lucide="heart" class="inline w-3 h-3 mr-1"></i> Reaccionar</button>
+                                <button class="hover:text-blue-500"><i data-lucide="message-square" class="inline w-3 h-3 mr-1"></i> Comentar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="post-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-sm hidden flex items-center justify-center p-6 z-[2000]">
+        <div class="glass p-10 w-full max-w-lg space-y-6">
+            <h3 class="font-black uppercase italic">Crear Post</h3>
+            <textarea id="post-txt" placeholder="¿Qué quieres compartir?" class="w-full bg-slate-900 p-4 rounded-xl outline-none text-sm h-32"></textarea>
+            <div class="flex gap-4">
+                <button onclick="addPost()" class="flex-1 bg-blue-600 py-4 rounded-xl font-black uppercase text-xs">Publicar</button>
+                <button onclick="document.getElementById('post-modal').classList.add('hidden')" class="flex-1 bg-slate-800 py-4 rounded-xl font-black uppercase text-xs">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+        function addPost() {
+            const txt = document.getElementById('post-txt').value;
+            if(!txt) return;
+            const item = `<div class="flex gap-6"><div class="w-14 h-14 bg-slate-800 rounded-full flex items-center justify-center font-black border border-slate-700">AM</div><div class="flex-1"><p class="text-xs font-black uppercase text-blue-400">Adrian Monzón <span class="text-[10px] text-slate-500 ml-2">Ahora</span></p><p class="text-sm text-slate-400 mt-2 leading-relaxed">${txt}</p></div></div>`;
+            document.getElementById('muro-list').insertAdjacentHTML('afterbegin', item);
+            document.getElementById('post-modal').classList.add('hidden');
+            lucide.createIcons();
+        }
+    </script>
+</body>
+</html>
