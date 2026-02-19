@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>MetaProject | Kanban</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <style>
+        body { background: #020617; color: white; margin: 0; }
+        .sidebar { width: 250px; position: fixed; height: 100vh; background: #020617; border-right: 1px solid #1e293b; }
+        .main { margin-left: 250px; padding: 40px; }
+        .col { background: #0f172a; border: 1px dashed #1e293b; border-radius: 20px; min-height: 500px; padding: 20px; }
+        .chip { background: #1e293b; padding: 15px; border-radius: 12px; border: 1px solid #334155; margin-bottom: 10px; cursor: grab; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="p-8 text-xl font-black text-blue-500 italic">MetaProject</div>
+        <nav class="text-[10px] font-black uppercase">
+            <a href="index.html" class="block p-4 pl-10 text-slate-500">Inicio</a>
+            <a href="kanban.html" class="block p-4 pl-10 text-blue-500 bg-slate-900 border-r-4 border-blue-500">Kanban</a>
+        </nav>
+    </aside>
+    <main class="main">
+        <div class="flex justify-between items-center mb-8">
+            <h2 class="text-2xl font-black italic uppercase">Kanban</h2>
+            <button onclick="add()" class="bg-blue-600 px-6 py-2 rounded-xl text-[10px] font-black uppercase">+ Nueva Tarea</button>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div id="c1" class="col"><p class="text-[9px] font-black text-slate-500 text-center mb-4">PENDIENTE</p></div>
+            <div id="c2" class="col"><p class="text-[9px] font-black text-slate-500 text-center mb-4">EN PROCESO</p></div>
+            <div id="c3" class="col"><p class="text-[9px] font-black text-slate-500 text-center mb-4">FINALIZADO</p></div>
+        </div>
+    </main>
+    <script>
+        function add() {
+            const t = prompt("Nombre de la tarea:"); if(!t) return;
+            const d = document.createElement('div'); d.className = 'chip'; d.innerText = t;
+            document.getElementById('c1').appendChild(d);
+        }
+        ['c1','c2','c3'].forEach(id => new Sortable(document.getElementById(id), { group: 'k', animation: 150 }));
+    </script>
+</body>
+</html>
