@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MetaProject | Roadmap</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #020617; color: #f1f5f9; margin: 0; }
+        .sidebar { width: 250px; position: fixed; height: 100vh; background: #020617; border-right: 1px solid #1e293b; z-index: 50; }
+        .main { margin-left: 250px; min-height: 100vh; }
+        .top-bar { height: 70px; background: #020617; border-bottom: 1px solid #1e293b; display: flex; align-items: center; justify-content: flex-end; padding: 0 40px; gap: 20px; }
+        .glass { background: #0f172a; border: 1px solid #1e293b; border-radius: 20px; }
+        .dropdown { position: absolute; top: 65px; right: 0; width: 200px; background: #1e293b; border: 1px solid #334155; border-radius: 12px; display: none; padding: 15px; }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="p-8"><h2 class="text-xl font-black text-blue-500 italic">MetaProject</h2></div>
+        <nav class="space-y-1 text-[10px] font-black uppercase">
+            <a href="index.html" class="block p-4 pl-10 text-slate-500 hover:text-white">Inicio</a>
+            <a href="roadmap.html" class="block p-4 pl-10 text-blue-500 bg-slate-900 border-r-4 border-blue-500">Hoja de ruta</a>
+            <a href="kanban.html" class="block p-4 pl-10 text-slate-500 hover:text-white">Kanban</a>
+            <a href="requerimientos.html" class="block p-4 pl-10 text-slate-500 hover:text-white">Requerimientos</a>
+            <a href="presupuesto.html" class="block p-4 pl-10 text-slate-500 hover:text-white">Presupuesto</a>
+        </nav>
+    </aside>
+
+    <main class="main">
+        <header class="top-bar">
+            <div class="relative">
+                <div onclick="toggleMenu('prof')" class="flex items-center gap-3 cursor-pointer">
+                    <p class="text-[10px] font-black uppercase">Adrian Monzón</p>
+                    <div class="bg-blue-600 p-2 rounded-lg"><i data-lucide="user" class="w-5 h-5"></i></div>
+                </div>
+                <div id="prof" class="dropdown text-center"><a href="registro.html" class="text-rose-500 text-[9px] font-black uppercase">Cerrar Sesión</a></div>
+            </div>
+        </header>
+
+        <div class="p-10 space-y-8">
+            <h2 class="text-2xl font-black italic uppercase tracking-tighter">Hitos del Proyecto</h2>
+            <div class="glass p-8">
+                <table class="w-full text-[10px] font-bold">
+                    <thead class="text-slate-500 uppercase border-b border-slate-800 text-center">
+                        <tr><th class="text-left py-4">Actividad</th><th>Responsable</th><th>Estatus</th></tr>
+                    </thead>
+                    <tbody class="text-center divide-y divide-slate-800">
+                        <tr><td class="text-left py-4 uppercase">Despliegue Vercel</td><td>Adrian</td><td><span class="text-emerald-500">Completado</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+    <script>
+        lucide.createIcons();
+        function toggleMenu(id) {
+            const el = document.getElementById(id);
+            el.style.display = el.style.display === 'block' ? 'none' : 'block';
+        }
+    </script>
+</body>
+</html>
