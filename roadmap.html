@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>MetaProject | Roadmap</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #0f172a; color: #f1f5f9; }
+        .sidebar { width: 260px; position: fixed; height: 100vh; background: #020617; border-right: 1px solid #1e293b; }
+        .main { margin-left: 260px; }
+        .glass { background: #1e293b; border: 1px solid #334155; border-radius: 24px; }
+        .month-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 2px; background: #334155; border: 1px solid #334155; }
+        .month-cell { background: #0f172a; height: 40px; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 800; color: #64748b; }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="p-8 mb-6"><h2 class="text-xl font-black text-blue-500 italic tracking-tighter">MetaProject</h2></div>
+        <nav class="space-y-1">
+            <a href="inicio.html" class="block p-4 pl-10 font-bold text-slate-500 hover:text-white uppercase text-[10px]">Inicio</a>
+            <a href="roadmap.html" class="block p-4 pl-10 font-bold text-blue-500 bg-slate-900 border-r-4 border-blue-500 uppercase text-[10px]">Hoja de ruta</a>
+            <a href="kanban.html" class="block p-4 pl-10 font-bold text-slate-500 hover:text-white uppercase text-[10px]">Kanban</a>
+            <a href="requerimientos.html" class="block p-4 pl-10 font-bold text-slate-500 hover:text-white uppercase text-[10px]">Requerimientos</a>
+            <a href="presupuesto.html" class="block p-4 pl-10 font-bold text-slate-500 hover:text-white uppercase text-[10px]">Presupuesto</a>
+        </nav>
+    </aside>
+
+    <div class="main p-10">
+        <div class="flex justify-between items-center mb-10">
+            <h2 class="text-2xl font-black italic uppercase italic tracking-tighter">Plan de Trabajo</h2>
+            <div class="flex gap-2"><span class="bg-blue-900/40 text-blue-400 px-3 py-1 rounded-full text-[8px] font-black uppercase">Despidalia</span><span class="bg-purple-900/40 text-purple-400 px-3 py-1 rounded-full text-[8px] font-black uppercase">UPAX</span><span class="bg-emerald-900/40 text-emerald-400 px-3 py-1 rounded-full text-[8px] font-black uppercase">UX</span></div>
+        </div>
+
+        <div class="glass overflow-hidden">
+            <div class="grid grid-cols-[200px_1fr] border-b border-slate-700 bg-slate-800/50">
+                <div class="p-4 text-[9px] font-black uppercase text-slate-400 border-r border-slate-700">Actividad / Grupo</div>
+                <div class="month-grid">
+                    <div class="month-cell">ENE</div><div class="month-cell">FEB</div><div class="month-cell">MAR</div><div class="month-cell">ABR</div><div class="month-cell">MAY</div><div class="month-cell">JUN</div>
+                    <div class="month-cell">JUL</div><div class="month-cell">AGO</div><div class="month-cell">SEP</div><div class="month-cell">OCT</div><div class="month-cell">NOV</div><div class="month-cell">DIC</div>
+                </div>
+            </div>
+            <div class="grid grid-cols-[200px_1fr] border-b border-slate-800">
+                <div class="p-4 flex flex-col justify-center border-r border-slate-800"><p class="text-[10px] font-black uppercase">Maquetado Base</p><p class="text-[7px] font-bold text-blue-500">UX GROUP</p></div>
+                <div class="relative h-12 flex items-center px-1">
+                    <div class="absolute left-0 w-1/4 h-3 bg-blue-600 rounded-full shadow-lg shadow-blue-900/40 ml-4"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>lucide.createIcons();</script>
+</body>
+</html>
