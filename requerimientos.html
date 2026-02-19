@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>MetaProject | Requerimientos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #0f172a; color: #f1f5f9; }
+        .sidebar { width: 260px; position: fixed; height: 100vh; background: #020617; border-right: 1px solid #1e293b; }
+        .main { margin-left: 260px; }
+        .glass { background: #1e293b; border: 1px solid #334155; border-radius: 20px; }
+        .mention { color: #3b82f6; font-weight: 800; }
+        textarea { resize: none; overflow: hidden; }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="p-8 mb-6"><h2 class="text-xl font-black text-blue-500 italic tracking-tighter">MetaProject</h2></div>
+        <nav class="space-y-1">
+            <a href="inicio.html" class="block p-4 pl-10 font-bold text-slate-500 hover:text-white uppercase text-[10px]">Inicio</a>
+            <a href="roadmap.html" class="block p-4 pl-10 font-bold text-slate-500 hover:text-white uppercase text-[10px]">Hoja de ruta</a>
+            <a href="kanban.html" class="block p-4 pl-10 font-bold text-slate-500 hover:text-white uppercase text-[10px]">Kanban</a>
+            <a href="requerimientos.html" class="block p-4 pl-10 font-bold text-blue-500 bg-slate-900 border-r-4 border-blue-500 uppercase text-[10px]">Requerimientos</a>
+            <a href="presupuesto.html" class="block p-4 pl-10 font-bold text-slate-500 hover:text-white uppercase text-[10px]">Presupuesto</a>
+        </nav>
+    </aside>
+
+    <div class="main p-10 space-y-8">
+        <div class="flex justify-between items-center"><h2 class="text-2xl font-black italic uppercase tracking-tighter">Requerimientos</h2><button onclick="toggleModal()" class="bg-blue-600 px-8 py-3 rounded-2xl text-[10px] font-black uppercase">+ Nuevo REQ</button></div>
+        
+        <div class="glass border-l-[10px] border-rose-500 overflow-hidden">
+            <div class="p-6 flex justify-between items-center bg-slate-800/30">
+                <div onclick="this.parentElement.nextElementSibling.classList.toggle('hidden')" class="flex items-center gap-4 cursor-pointer flex-1">
+                    <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center font-black text-[10px]">AM</div>
+                    <div><h4 class="font-black text-xs uppercase">Estructura de Base de Datos</h4><p class="text-[8px] font-bold text-slate-500">Adrian Monzón • Despidalia</p></div>
+                </div>
+                <div class="flex gap-5 border-l border-slate-700 pl-6 text-slate-500"><i data-lucide="edit-3" class="w-4 h-4 cursor-pointer"></i><i data-lucide="trash-2" class="w-4 h-4 cursor-pointer"></i><i data-lucide="download" class="w-4 h-4 cursor-pointer"></i></div>
+            </div>
+            <div class="hidden p-8 bg-slate-900/40 border-t border-slate-800 space-y-6">
+                <div class="grid grid-cols-3 gap-6">
+                    <div class="bg-slate-900 p-4 rounded-xl"><p class="text-[7px] font-black text-blue-500 mb-2 uppercase italic">Objetivo</p><p class="text-[10px] text-slate-400">Escalabilidad total.</p></div>
+                    <div class="bg-slate-900 p-4 rounded-xl"><p class="text-[7px] font-black text-blue-500 mb-2 uppercase italic">Situación Actual</p><p class="text-[10px] text-slate-400">Sin BD central.</p></div>
+                    <div class="bg-slate-900 p-4 rounded-xl"><p class="text-[7px] font-black text-blue-500 mb-2 uppercase italic">Situación Esperada</p><p class="text-[10px] text-slate-400">PostgreSQL Cloud.</p></div>
+                </div>
+                <div class="pt-4 border-t border-slate-800">
+                    <p class="text-[8px] font-black text-slate-500 uppercase mb-4">Comentarios</p>
+                    <div class="flex gap-4 items-start"><div class="w-6 h-6 bg-slate-700 rounded-full flex-shrink-0"></div><p class="text-[10px] text-slate-400"><span class="mention">@PMO_User</span> favor de validar el presupuesto asignado.</p></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="modal" class="fixed inset-0 bg-slate-950/95 hidden flex items-center justify-center p-6 z-[2000]">
+        <div class="glass p-10 w-full max-w-xl space-y-4">
+            <h3 class="font-black uppercase italic text-blue-500">Configurar Requerimiento</h3>
+            <input type="text" placeholder="TÍTULO" class="w-full bg-slate-900 p-4 rounded-xl outline-none font-black text-[10px]">
+            <select class="w-full bg-slate-900 p-4 rounded-xl outline-none font-black text-slate-500 text-[10px] uppercase"><option>Despidalia</option><option>UPAX</option><option>UX</option></select>
+            <textarea placeholder="OBJETIVO" class="w-full bg-slate-900 p-4 rounded-xl outline-none text-[10px] h-20" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
+            <div class="flex gap-4"><button class="flex-1 bg-blue-600 py-4 rounded-xl font-black uppercase text-[10px]">Guardar</button><button onclick="toggleModal()" class="flex-1 bg-slate-800 py-4 rounded-xl font-black uppercase text-[10px]">Cerrar</button></div>
+        </div>
+    </div>
+    <script>
+        lucide.createIcons();
+        function toggleModal() { document.getElementById('modal').classList.toggle('hidden'); }
+    </script>
+</body>
+</html>
