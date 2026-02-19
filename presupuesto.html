@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>MetaProject | Presupuesto</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #0f172a; color: #f1f5f9; }
+        .sidebar { width: 260px; position: fixed; height: 100vh; background: #020617; border-right: 1px solid #1e293b; }
+        .main { margin-left: 260px; }
+        .glass { background: #1e293b; border: 1px solid #334155; border-radius: 24px; }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="p-8 mb-6"><h2 class="text-xl font-black text-blue-500 italic tracking-tighter">MetaProject</h2></div>
+        <nav class="space-y-1">
+            <a href="inicio.html" class="block p-4 pl-10 font-bold text-slate-500 hover:text-white uppercase text-[10px]">Inicio</a>
+            <a href="roadmap.html" class="block p-4 pl-10 font-bold text-slate-500 hover:text-white uppercase text-[10px]">Hoja de ruta</a>
+            <a href="kanban.html" class="block p-4 pl-10 font-bold text-slate-500 hover:text-white uppercase text-[10px]">Kanban</a>
+            <a href="requerimientos.html" class="block p-4 pl-10 font-bold text-slate-500 hover:text-white uppercase text-[10px]">Requerimientos</a>
+            <a href="presupuesto.html" class="block p-4 pl-10 font-bold text-blue-500 bg-slate-900 border-r-4 border-blue-500 uppercase text-[10px]">Presupuesto</a>
+        </nav>
+    </aside>
+
+    <div class="main p-10 space-y-8">
+        <div class="grid grid-cols-3 gap-6 text-center">
+            <div class="glass p-8 border-b-8 border-emerald-500"><p class="text-[9px] font-black text-slate-500 uppercase">Autorizado</p><p class="text-4xl font-black text-emerald-500">$100</p></div>
+            <div class="glass p-8 border-b-8 border-rose-500"><p class="text-[9px] font-black text-slate-500 uppercase">Usado</p><p id="used-val" class="text-4xl font-black text-rose-500">$20</p></div>
+            <div class="glass p-8 border-b-8 border-blue-500"><p class="text-[9px] font-black text-slate-500 uppercase">Restante</p><p id="left-val" class="text-4xl font-black text-blue-500">$80</p></div>
+        </div>
+
+        <div class="glass overflow-hidden">
+            <table class="w-full text-left">
+                <thead class="bg-slate-800 text-slate-400 font-black uppercase text-[9px]"><tr class="border-b border-slate-700"><th class="p-6">Concepto / Grupo</th><th class="p-6">Autorizador</th><th class="p-6">Monto</th><th class="p-6 text-right">Acción</th></tr></thead>
+                <tbody id="cash-table" class="divide-y divide-slate-800 text-[11px] font-bold">
+                    <tr><td class="p-6">SERVIDOR AWS / UPAX</td><td class="p-6 uppercase">Adrian Monzón</td><td class="p-6 text-blue-500 font-black">$20.00</td><td class="p-6 text-right"><i data-lucide="trash-2" class="w-4 h-4 inline text-rose-500 cursor-pointer"></i></td></tr>
+                </tbody>
+            </table>
+            <div class="p-6 bg-slate-900/50 flex gap-4">
+                <input id="c-name" placeholder="Concepto" class="bg-slate-800 p-3 rounded-lg flex-1 outline-none text-[10px] font-black">
+                <input id="c-amt" type="number" placeholder="$0.00" class="bg-slate-800 p-3 rounded-lg w-32 outline-none text-[10px] font-black">
+                <button onclick="addExp()" class="bg-blue-600 px-6 py-3 rounded-lg font-black text-[9px] uppercase">Añadir Gasto</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        lucide.createIcons();
+        function addExp() {
+            const n = document.getElementById('c-name').value;
+            const a = document.getElementById('c-amt').value;
+            if(!n || !a) return;
+            const row = `<tr><td class="p-6 uppercase">${n}</td><td class="p-6 uppercase">Adrian Monzón</td><td class="p-6 text-blue-500 font-black">$${parseFloat(a).toFixed(2)}</td><td class="p-6 text-right"><i data-lucide="trash-2" class="w-4 h-4 inline text-rose-500 cursor-pointer"></i></td></tr>`;
+            document.getElementById('cash-table').insertAdjacentHTML('beforeend', row);
+            lucide.createIcons();
+        }
+    </script>
+</body>
+</html>
