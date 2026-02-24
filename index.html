@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MetaProject | Premium Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #FBFBFD; color: #1D1D1F; overflow: hidden; }
+        
+        /* Sidebar con estructura */
+        .sidebar { width: 230px; height: 100vh; position: fixed; background: #F5F5F7; border-right: 1px solid #E5E5E7; z-index: 50; }
+        .main-content { margin-left: 230px; height: 100vh; overflow-y: auto; }
+        
+        /* Tarjetas estilo Apple (con profundidad real) */
+        .apple-card { background: #FFFFFF; border-radius: 16px; border: 1px solid rgba(0,0,0,0.03); box-shadow: 0 4px 12px rgba(0,0,0,0.01); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .apple-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.04); }
+
+        /* Barra de búsqueda integrada */
+        .search-bar { background: rgba(0,0,0,0.05); border-radius: 10px; width: 220px; transition: all 0.3s; }
+        .search-bar:focus-within { background: #FFFFFF; width: 280px; box-shadow: 0 0 0 3px rgba(0,125,255,0.1); }
+
+        /* Scrollbar estética */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-thumb { background: #D2D2D7; border-radius: 10px; }
+        
+        .action-btn { opacity: 0; transition: opacity 0.2s; }
+        .apple-card:hover .action-btn { opacity: 1; }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar flex flex-col">
+        <div class="p-8 pb-10">
+            <h2 class="text-sm font-black tracking-tighter text-gray-900 uppercase italic">MetaProject</h2>
+        </div>
+        <nav class="flex-1 px-4 space-y-1 text-[11px] font-bold uppercase tracking-wider">
+            <a href="#" class="flex items-center gap-3 px-4 py-3 text-blue-600 bg-white shadow-sm rounded-xl"><i data-lucide="layout-grid" class="w-4 h-4 text-blue-500"></i> Inicio</a>
+            <a href="#" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-gray-900 transition"><i data-lucide="map" class="w-4 h-4"></i> Roadmap</a>
+            <a href="#" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-gray-900 transition"><i data-lucide="clipboard-list" class="w-4 h-4"></i> Requerimientos</a>
+            <a href="#" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-gray-900 transition"><i data-lucide="wallet" class="w-4 h-4"></i> Presupuesto</a>
+        </nav>
+        <div class="p-6 border-t border-gray-200">
+            <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-4">AMG Soluciones</p>
+            <a href="#" class="flex items-center gap-2 text-[10px] font-bold text-gray-500 hover:text-red-500 transition"><i data-lucide="settings" class="w-4 h-4"></i> Admin Panel</a>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="h-14 bg-white/80 backdrop-blur-xl border-b border-gray-100 px-10 flex items-center justify-between sticky top-0 z-40">
+            <div class="search-bar flex items-center px-3 py-1.5">
+                <i data-lucide="search" class="w-3.5 h-3.5 text-gray-400"></i>
+                <input type="text" placeholder="Buscar actividades..." class="bg-transparent border-none text-[12px] ml-2 w-full focus:outline-none">
+            </div>
+            
+            <div class="flex items-center gap-6">
+                <button class="relative text-gray-400 hover:text-gray-900 transition"><i data-lucide="bell" class="w-4.5 h-4.5"></i></button>
+                <div class="flex items-center gap-3 border-l pl-6 border-gray-200">
+                    <div class="text-right">
+                        <p class="text-[11px] font-bold">Adrian Monzón</p>
+                        <p class="text-[9px] text-blue-500 font-bold uppercase">Pro Owner</p>
+                    </div>
+                    <div class="w-8 h-8 bg-black rounded-full flex items-center justify-center text-white font-bold text-[10px]">AM</div>
+                </div>
+            </div>
+        </header>
+
+        <div class="p-10 max-w-6xl mx-auto space-y-8">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <div class="lg:col-span-3 apple-card p-6 flex flex-col items-center justify-center">
+                    <div class="w-20 h-20 mb-3 relative">
+                        <canvas id="chartDona"></canvas>
+                        <div class="absolute inset-0 flex items-center justify-center text-lg font-extrabold italic">85%</div>
+                    </div>
+                    <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Avance del Proyecto</span>
+                </div>
+                <div class="lg:col-span-9 grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="apple-card p-6"><p class="text-3xl font-black">148</p><p class="text-[10px] font-bold text-gray-400 uppercase">Totales</p></div>
+                    <div class="apple-card p-6 border-b-2 border-emerald-500"><p class="text-3xl font-black text-emerald-600">126</p><p class="text-[10px] font-bold text-gray-400 uppercase">Completas</p></div>
+                    <div class="apple-card p-6 border-b-2 border-blue-500"><p class="text-3xl font-black text-blue-600">12</p><p class="text-[10px] font-bold text-gray-400 uppercase">En Proceso</p></div>
+                    <div class="apple-card p-6 border-b-2 border-rose-500"><p class="text-3xl font-black text-rose-600">2</p><p class="text-[10px] font-bold text-gray-400 uppercase">Atrasadas</p></div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="space-y-6">
+                    <div class="apple-card p-6">
+                        <h4 class="text-[10px] font-black text-gray-400 uppercase mb-6 tracking-widest">Hitos Críticos</h4>
+                        <div class="space-y-6">
+                            <div class="flex items-center justify-between group cursor-pointer">
+                                <div><p class="text-xs font-bold">Maquetado App</p><p class="text-[10px] text-gray-400">Entrega en 3 días</p></div>
+                                <div class="w-12 h-1 bg-gray-100 rounded-full overflow-hidden"><div class="h-full bg-blue-500 w-[60%]"></div></div>
+                            </div>
+                            <div class="flex items-center justify-between group cursor-pointer">
+                                <div><p class="text-xs font-bold">API Integration</p><p class="text-[10px] text-gray-400">En desarrollo</p></div>
+                                <div class="w-12 h-1 bg-gray-100 rounded-full overflow-hidden"><div class="h-full bg-blue-500 w-[20%]"></div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-2 space-y-6">
+                    <div class="apple-card p-6">
+                        <div class="flex gap-4">
+                            <div class="w-10 h-10 bg-gray-100 rounded-full flex-shrink-0 flex items-center justify-center font-bold text-gray-400">AM</div>
+                            <div class="flex-1">
+                                <textarea id="postInput" placeholder="Comparte una actualización con el equipo..." class="w-full text-sm outline-none resize-none min-h-[50px] placeholder:text-gray-300" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
+                                <div class="flex justify-end mt-4 pt-4 border-t border-gray-50">
+                                    <button onclick="crearPost()" class="bg-blue-600 text-white px-6 py-2 rounded-xl text-[11px] font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-200">Publicar</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="feedPosts" class="space-y-4">
+                        <div class="apple-card p-6">
+                            <div class="flex gap-4">
+                                <div class="w-10 h-10 bg-black text-white rounded-full flex items-center justify-center font-bold text-[10px]">AM</div>
+                                <div class="flex-1">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <h4 class="text-xs font-bold">Adrian Monzón <span class="text-gray-400 font-normal ml-2">Hace 5 min</span></h4>
+                                        <div class="flex gap-2 action-btn">
+                                            <button onclick="this.closest('.apple-card').remove()" class="text-gray-300 hover:text-red-500 transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                                        </div>
+                                    </div>
+                                    <p class="text-[14px] text-gray-600 leading-relaxed">El flujo de requerimientos ha sido aprobado por dirección. Comenzamos desarrollo lunes.</p>
+                                    <div class="flex gap-6 mt-6 pt-4 border-t border-gray-50">
+                                        <button onclick="reaccionar(this)" class="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-tighter hover:text-red-500"><i data-lucide="heart" class="w-3.5 h-3.5"></i> <span>0</span></button>
+                                        <button onclick="toggleComments(1)" class="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-tighter hover:text-blue-500"><i data-lucide="message-square" class="w-3.5 h-3.5"></i> <span id="count-1">0</span> COMENTARIOS</button>
+                                    </div>
+                                    <div id="area-1" class="hidden mt-4 pt-4 border-t border-gray-50">
+                                        <input id="in-1" class="w-full bg-gray-50 rounded-xl px-4 py-2.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-blue-50" placeholder="Escribe un comentario y pulsa Enter..." onkeypress="if(event.key==='Enter') addRep(1)">
+                                        <div id="rep-1" class="mt-4 space-y-3"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+
+        // CHART (Dona de alta definición)
+        const ctx = document.getElementById('chartDona').getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: { datasets: [{ data: [85, 15], backgroundColor: ['#0071E3', '#F5F5F7'], borderWidth: 0 }] },
+            options: { cutout: '82%', plugins: { legend: { display: false } } }
+        });
+
+        function crearPost() {
+            const input = document.getElementById('postInput');
+            if(!input.value.trim()) return;
+            const id = Date.now();
+            const html = `
+                <div id="post-${id}" class="apple-card p-6 animate-in slide-in-from-bottom-2">
+                    <div class="flex gap-4">
+                        <div class="w-10 h-10 bg-black text-white rounded-full flex items-center justify-center font-bold text-[10px]">AM</div>
+                        <div class="flex-1">
+                            <div class="flex justify-between items-start mb-2">
+                                <h4 class="text-xs font-bold">Adrian M. <span class="text-gray-400 font-normal ml-2">Ahora</span></h4>
+                                <div class="flex gap-2 action-btn">
+                                    <button onclick="this.closest('.apple-card').remove()" class="text-gray-300 hover:text-red-500 transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                                </div>
+                            </div>
+                            <p class="text-[14px] text-gray-600 leading-relaxed">${input.value}</p>
+                            <div class="flex gap-6 mt-6 pt-4 border-t border-gray-50">
+                                <button onclick="reaccionar(this)" class="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-tighter hover:text-red-500"><i data-lucide="heart" class="w-3.5 h-3.5"></i> <span>0</span></button>
+                                <button onclick="toggleComments(${id})" class="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-tighter hover:text-blue-500"><i data-lucide="message-square" class="w-3.5 h-3.5"></i> <span id="count-${id}">0</span> COMENTARIOS</button>
+                            </div>
+                            <div id="area-${id}" class="hidden mt-4 pt-4 border-t border-gray-50">
+                                <input id="in-${id}" class="w-full bg-gray-50 rounded-xl px-4 py-2.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-blue-50" placeholder="Responder..." onkeypress="if(event.key==='Enter') addRep(${id})">
+                                <div id="rep-${id}" class="mt-4 space-y-3"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            document.getElementById('feedPosts').insertAdjacentHTML('afterbegin', html);
+            input.value = ''; input.style.height = '50px';
+            lucide.createIcons();
+        }
+
+        function reaccionar(btn) {
+            const span = btn.querySelector('span');
+            btn.classList.toggle('text-red-500');
+            span.innerText = btn.classList.contains('text-red-500') ? "1" : "0";
+            btn.querySelector('i').setAttribute('fill', btn.classList.contains('text-red-500') ? "currentColor" : "none");
+        }
+
+        function addRep(id) {
+            const i = document.getElementById(`in-${id}`);
+            if(!i.value.trim()) return;
+            const repId = Date.now();
+            const h = `<div id="rep-${repId}" class="flex justify-between items-center group bg-gray-50 p-3 rounded-xl">
+                <p class="text-[12px] text-gray-600"><span class="font-bold text-gray-900">Adrian:</span> ${i.value}</p>
+                <button onclick="this.closest('#rep-${repId}').remove()" class="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 transition"><i data-lucide="x-circle" class="w-3.5 h-3.5"></i></button>
+            </div>`;
+            document.getElementById(`rep-${id}`).insertAdjacentHTML('beforeend', h);
+            const count = document.getElementById(`count-${id}`);
+            count.innerText = parseInt(count.innerText) + 1;
+            i.value = ''; lucide.createIcons();
+        }
+
+        function toggleComments(id) { document.getElementById(`area-${id}`).classList.toggle('hidden'); }
+    </script>
+</body>
+</html>
