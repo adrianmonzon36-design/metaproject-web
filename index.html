@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MetaProject | Apple UX Corrected</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --apple-bg: #F5F5F7; --apple-card: #FFFFFF; }
+        * { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; font-style: normal !important; }
+        body { background-color: var(--apple-bg); color: #1D1D1F; margin: 0; }
+
+        .sidebar { width: 260px; height: 100vh; position: fixed; background: rgba(255,255,255,0.8); backdrop-filter: saturate(180%) blur(20px); border-right: 1px solid rgba(0,0,0,0.08); z-index: 100; transform: translateX(-100%); transition: transform 0.3s ease; }
+        @media (min-width: 1024px) { .sidebar { transform: translateX(0); } .main-content { margin-left: 260px; } }
+        .sidebar.active { transform: translateX(0); }
+
+        .apple-card { background: var(--apple-card); border-radius: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.04); }
+        
+        /* DROPDOWNS POSICIONADOS CORRECTAMENTE AL EXTREMO DERECHO */
+        .apple-dropdown { 
+            position: absolute; top: 100%; right: 0; margin-top: 12px;
+            background: rgba(255,255,255,0.98); backdrop-filter: blur(25px); 
+            border-radius: 16px; box-shadow: 0 15px 50px rgba(0,0,0,0.12); 
+            border: 1px solid rgba(0,0,0,0.05); width: 300px; 
+            opacity: 0; visibility: hidden; transform: translateY(-10px); 
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); z-index: 200; 
+        }
+        .apple-dropdown.active { opacity: 1; visibility: visible; transform: translateY(0); }
+
+        .status-badge { padding: 4px 10px; border-radius: 8px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+        .status-completado { background: #E3F9E5; color: #1DB446; }
+        .status-en-tiempo { background: #E3F2FD; color: #0071E3; }
+        .status-atrasado { background: #FFF1F0; color: #FF3B30; }
+
+        .gantt-track { background: #E8E8ED; height: 5px; border-radius: 10px; overflow: hidden; }
+        .gantt-fill { background: #1D1D1F; height: 100%; transition: width 1s ease; }
+    </style>
+</head>
+<body>
+
+    <aside id="sidebar" class="sidebar p-8 flex flex-col">
+        <h1 class="text-xl font-bold mb-10 tracking-tight">MetaProject</h1>
+        <nav class="flex-1 space-y-2">
+            <a href="#" class="flex items-center gap-3 px-4 py-3 bg-black text-white rounded-xl font-medium text-sm transition shadow-lg">
+                <i data-lucide="layout-grid" class="w-4 h-4"></i> Dashboard
+            </a>
+            <a href="#" class="flex items-center gap-3 px-4 py-3 text-gray-500 hover:bg-gray-100 rounded-xl transition text-sm">
+                <i data-lucide="map" class="w-4 h-4"></i> Roadmap
+            </a>
+            <a href="#" class="flex items-center gap-3 px-4 py-3 text-gray-500 hover:bg-gray-100 rounded-xl transition text-sm">
+                <i data-lucide="layers" class="w-4 h-4"></i> Requerimientos
+            </a>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <header class="h-16 px-6 lg:px-12 flex items-center justify-between sticky top-0 bg-white/80 backdrop-blur-md z-50 border-b border-gray-100">
+            <div class="flex items-center gap-4">
+                <button onclick="toggleMenu()" class="lg:hidden text-gray-500"><i data-lucide="menu"></i></button>
+                <h2 class="text-sm font-bold hidden md:block">AMG Soluciones</h2>
+            </div>
+            
+            <div class="flex items-center gap-8">
+                <div class="relative">
+                    <button onclick="toggleDropdown('notif-menu')" class="text-gray-400 hover:text-black transition flex items-center p-1 relative">
+                        <i data-lucide="bell" class="w-5 h-5"></i>
+                        <span class="absolute top-0 right-0 w-2 h-2 bg-blue-500 rounded-full border-2 border-white"></span>
+                    </button>
+                    <div id="notif-menu" class="apple-dropdown">
+                        <div class="p-4 border-b border-gray-50"><h4 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Notificaciones</h4></div>
+                        <div class="max-h-64 overflow-y-auto">
+                            <div class="p-4 hover:bg-gray-50 transition border-b border-gray-50 cursor-pointer">
+                                <p class="text-xs font-bold">Hito completado: Supabase Setup</p>
+                                <p class="text-[10px] text-gray-400 mt-1">Hace 5 minutos</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="relative">
+                    <button onclick="toggleDropdown('profile-menu')" class="flex items-center gap-3 hover:opacity-80 transition group">
+                        <div class="text-right hidden sm:block">
+                            <p class="text-[11px] font-bold leading-none">Adrian Monzón</p>
+                            <p class="text-[9px] text-gray-400 mt-1 uppercase tracking-tighter font-bold">Administrador</p>
+                        </div>
+                        <div class="w-9 h-9 bg-black rounded-full text-white text-[11px] font-bold flex items-center justify-center shadow-inner">AM</div>
+                    </button>
+                    <div id="profile-menu" class="apple-dropdown w-56">
+                        <div class="p-2">
+                            <a href="#" class="flex items-center gap-3 px-4 py-3 text-xs font-medium hover:bg-gray-50 rounded-xl transition">
+                                <i data-lucide="user-circle" class="w-4 h-4 text-gray-400"></i> Mi Perfil
+                            </a>
+                            <a href="#" class="flex items-center gap-3 px-4 py-3 text-xs font-medium hover:bg-gray-50 rounded-xl transition">
+                                <i data-lucide="settings" class="w-4 h-4 text-gray-400"></i> Ajustes
+                            </a>
+                            <div class="h-[1px] bg-gray-50 my-2"></div>
+                            <a href="#" class="flex items-center gap-3 px-4 py-3 text-xs font-bold text-red-500 hover:bg-red-50 rounded-xl transition">
+                                <i data-lucide="log-out" class="w-4 h-4"></i> Cerrar Sesión
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="p-6 lg:p-12 max-w-7xl mx-auto space-y-10">
+            
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="apple-card p-8 flex flex-col items-center justify-center col-span-2 lg:col-span-1">
+                    <div class="w-16 h-16 relative mb-4">
+                        <canvas id="mainProgressChart"></canvas>
+                        <div class="absolute inset-0 flex items-center justify-center text-sm font-bold">85%</div>
+                    </div>
+                    <span class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Avance Global</span>
+                </div>
+                <div class="apple-card p-8">
+                    <p class="text-[10px] text-gray-400 font-bold uppercase mb-2">Total Listas</p>
+                    <p class="text-3xl font-bold tracking-tight">126</p>
+                </div>
+                <div class="apple-card p-8">
+                    <p class="text-[10px] text-blue-500 font-bold uppercase mb-2 tracking-tight">En Proceso</p>
+                    <p class="text-3xl font-bold text-blue-600 tracking-tight">12</p>
+                </div>
+                <div class="apple-card p-8">
+                    <p class="text-[10px] text-rose-500 font-bold uppercase mb-2">Atrasadas</p>
+                    <p class="text-3xl font-bold text-rose-500 tracking-tight">02</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                <div class="lg:col-span-5 space-y-6">
+                    <div class="apple-card p-8">
+                        <div class="flex justify-between items-center mb-10">
+                            <h3 class="text-sm font-bold">Hitos del Proyecto</h3>
+                            <span class="text-[10px] font-bold text-gray-300 uppercase">2026</span>
+                        </div>
+                        <div id="hitosRoot" class="space-y-8"></div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-7 space-y-6">
+                    <div class="apple-card p-6">
+                        <textarea id="postTxt" placeholder="¿Cuál es el estatus de hoy, Adrian?" class="w-full text-base outline-none resize-none font-medium placeholder:text-gray-300 min-h-[60px]"></textarea>
+                        <div class="flex justify-end mt-4 pt-4 border-t border-gray-50">
+                            <button onclick="publish()" class="bg-black text-white px-8 py-2.5 rounded-full text-xs font-bold active:scale-95 transition shadow-md">Publicar</button>
+                        </div>
+                    </div>
+                    <div id="feed" class="space-y-4"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+        function toggleMenu() { document.getElementById('sidebar').classList.toggle('active'); }
+        
+        function toggleDropdown(id) { 
+            const target = document.getElementById(id);
+            const isOpen = target.classList.contains('active');
+            document.querySelectorAll('.apple-dropdown').forEach(d => d.classList.remove('active'));
+            if (!isOpen) target.classList.add('active');
+        }
+
+        // Cerrar dropdowns al hacer clic fuera
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.relative')) {
+                document.querySelectorAll('.apple-dropdown').forEach(d => d.classList.remove('active'));
+            }
+        });
+
+        // Gráfico de Avance
+        new Chart(document.getElementById('mainProgressChart'), {
+            type: 'doughnut',
+            data: { datasets: [{ data: [85, 15], backgroundColor: ['#000', '#F2F2F7'], borderWidth: 0 }] },
+            options: { cutout: '82%', plugins: { legend: { display: false } } }
+        });
+
+        // Hitos
+        const hitos = [
+            { n: 'Diseño de Interfaz Purista', f: '12 Feb', e: 'completado', a: 100 },
+            { n: 'Integración GitHub/Vercel', f: '28 Feb', e: 'en-tiempo', a: 65 },
+            { n: 'Dashboard Requerimientos', f: '15 Mar', e: 'en-tiempo', a: 20 }
+        ];
+
+        document.getElementById('hitosRoot').innerHTML = hitos.map(h => `
+            <div class="space-y-4">
+                <div class="flex justify-between items-start">
+                    <div><p class="text-sm font-bold text-gray-900">${h.n}</p><p class="text-[10px] text-gray-400 mt-1 font-bold">FINALIZA: ${h.f}</p></div>
+                    <span class="status-badge status-${h.e}">${h.e.replace('-', ' ')}</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="gantt-track flex-1"><div class="gantt-fill" style="width: ${h.a}%"></div></div>
+                    <span class="text-[11px] font-bold text-gray-400">${h.a}%</span>
+                </div>
+            </div>
+        `).join('');
+
+        // Muro
+        function publish() {
+            const val = document.getElementById('postTxt').value.trim();
+            if(!val) return;
+            const id = Date.now();
+            const html = `
+                <div id="post-${id}" class="apple-card p-8 animate-in slide-in-from-bottom-2 duration-300">
+                    <div class="flex justify-between items-center mb-6">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 bg-black rounded-full text-white text-[10px] font-bold flex items-center justify-center">AM</div>
+                            <div><p class="text-xs font-bold">Adrian Monzón</p><p class="text-[9px] text-gray-400 font-bold uppercase">Ahora</p></div>
+                        </div>
+                        <button onclick="this.closest('.apple-card').remove()" class="text-gray-300 hover:text-red-500 transition"><i data-lucide="x" class="w-4 h-4"></i></button>
+                    </div>
+                    <p class="text-sm text-gray-700 leading-relaxed font-medium mb-6">${val}</p>
+                    <div class="flex gap-6 pt-6 border-t border-gray-50">
+                        <button class="text-[10px] font-bold text-gray-400 hover:text-red-500 transition flex items-center gap-2 uppercase tracking-widest"><i data-lucide="heart" class="w-4 h-4"></i> Me gusta</button>
+                        <button class="text-[10px] font-bold text-gray-400 hover:text-blue-500 transition flex items-center gap-2 uppercase tracking-widest"><i data-lucide="message-circle" class="w-4 h-4"></i> Comentar</button>
+                    </div>
+                </div>`;
+            document.getElementById('feed').insertAdjacentHTML('afterbegin', html);
+            document.getElementById('postTxt').value = ''; lucide.createIcons();
+        }
+    </script>
+</body>
+</html>
