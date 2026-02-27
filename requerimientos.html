@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MetaProject | Requerimientos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --apple-bg: #F5F5F7; --apple-card: #FFFFFF; }
+        * { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+        body { background-color: var(--apple-bg); color: #1D1D1F; margin: 0; overflow-x: hidden; }
+
+        .sidebar { width: 260px; height: 100vh; position: fixed; background: rgba(255,255,255,0.8); backdrop-filter: saturate(180%) blur(20px); border-right: 1px solid rgba(0,0,0,0.08); z-index: 100; transform: translateX(-100%); transition: transform 0.3s ease; }
+        @media (min-width: 1024px) { .sidebar { transform: translateX(0); } .main-content { margin-left: 260px; } }
+        .sidebar.active { transform: translateX(0); }
+
+        .apple-card { background: var(--apple-card); border-radius: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.04); transition: all 0.2s; }
+        
+        /* Badges de Prioridad (Tus colores originales) */
+        .prio-critica { background: #FF3B30; color: white; }
+        .prio-alta { background: #FF9500; color: white; }
+        .prio-media { background: #007AFF; color: white; }
+        .prio-baja { background: #8E8E93; color: white; }
+
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+        .modal-overlay.active { display: flex; }
+        .modal-content { background: white; width: 100%; max-width: 600px; border-radius: 28px; max-height: 90vh; overflow-y: auto; padding: 32px; position: relative; }
+        
+        /* Drawer (Ajustado a la escala de tu diseño) */
+        .side-drawer { position: fixed; top: 0; right: -400px; width: 400px; height: 100vh; background: white; z-index: 1100; box-shadow: -10px 0 40px rgba(0,0,0,0.1); transition: right 0.3s ease; display: flex; flex-direction: column; }
+        .side-drawer.active { right: 0; }
+
+        .apple-dropdown { position: absolute; top: 100%; right: 0; margin-top: 8px; background: rgba(255,255,255,0.98); backdrop-filter: blur(20px); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.05); width: 180px; opacity: 0; visibility: hidden; z-index: 200; }
+        .apple-dropdown.active { opacity: 1; visibility: visible; }
+        
+        textarea { resize: none; overflow: hidden; }
+        
+        /* Scrollbar limpio para el drawer */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #E5E5EA; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+    <div id="deleteModal" class="modal-overlay">
+        <div class="modal-content max-w-xs text-center p-8 relative">
+            <button onclick="closeModal('deleteModal')" class="absolute top-4 right-4 text-gray-400 hover:text-black transition"><i data-lucide="x" class="w-4 h-4"></i></button>
+            <div class="w-12 h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4"><i data-lucide="alert-triangle"></i></div>
+            <h3 class="text-lg font-bold mb-2">¿Estás seguro?</h3>
+            <p class="text-xs text-gray-500 mb-8 font-medium">Esta acción no se puede deshacer.</p>
+            <div class="flex flex-col gap-2">
+                <button id="confirmDeleteBtn" class="w-full bg-red-500 text-white py-3 rounded-xl text-xs font-bold transition active:scale-95">Continuar</button>
+                <button onclick="closeModal('deleteModal')" class="w-full py-3 rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-100 transition">Descartar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="reqModal" class="modal-overlay">
+        <div class="modal-content relative">
+            <button onclick="closeModal('reqModal')" class="absolute top-6 right-6 text-gray-400 hover:text-black transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+            <h2 id="modalTitle" class="text-2xl font-bold mb-6 tracking-tight">Nuevo Requerimiento</h2>
+            <input type="hidden" id="editId">
+            <div class="space-y-4">
+                <div>
+                    <label class="text-[10px] font-bold text-gray-400 uppercase ml-1">Título</label>
+                    <input id="reqTitle" type="text" class="w-full bg-gray-50 p-4 rounded-xl border-none outline-none focus:ring-1 focus:ring-gray-200 mt-1 font-semibold text-sm">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-gray-400 uppercase ml-1">Objetivo</label>
+                    <textarea id="reqObj" oninput="autoExpand(this)" class="w-full bg-gray-50 p-4 rounded-xl border-none outline-none focus:ring-1 focus:ring-gray-200 mt-1 text-sm"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[10px] font-bold text-gray-400 uppercase ml-1">Situación Actual</label>
+                        <textarea id="reqActual" oninput="autoExpand(this)" class="w-full bg-gray-50 p-4 rounded-xl border-none outline-none focus:ring-1 focus:ring-gray-200 mt-1 text-sm"></textarea>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-gray-400 uppercase ml-1">Situación Esperada</label>
+                        <textarea id="reqEspera" oninput="autoExpand(this)" class="w-full bg-gray-50 p-4 rounded-xl border-none outline-none focus:ring-1 focus:ring-gray-200 mt-1 text-sm"></textarea>
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-gray-400 uppercase ml-1">Prioridad</label>
+                    <select id="reqPrio" class="w-full bg-gray-50 p-4 rounded-xl border-none outline-none focus:ring-1 focus:ring-gray-200 mt-1 font-bold text-sm">
+                        <option value="critica">Crítica</option>
+                        <option value="alta">Alta</option>
+                        <option value="media">Media</option>
+                        <option value="baja">Baja</option>
+                    </select>
+                </div>
+            </div>
+            <div class="flex justify-end gap-3 mt-8">
+                <button onclick="closeModal('reqModal')" class="px-6 py-2 rounded-full text-xs font-bold text-gray-400 hover:bg-gray-50 transition">Descartar</button>
+                <button onclick="saveReq()" class="bg-black text-white px-8 py-2.5 rounded-full text-xs font-bold shadow-lg transition active:scale-95">Publicar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="sideDrawer" class="side-drawer">
+        <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-white">
+            <h2 class="text-lg font-bold tracking-tight">Detalles</h2>
+            <button onclick="closeDrawer()" class="p-1.5 text-gray-400 hover:text-black hover:bg-gray-50 rounded-lg transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+        </div>
+        <div id="drawerBody" class="flex-1 overflow-y-auto p-6 space-y-6">
+            </div>
+        <div class="p-4 border-t border-gray-100 bg-gray-50/50">
+            <div class="flex gap-2 bg-white border border-gray-200 rounded-xl p-1 shadow-sm">
+                <input id="newCommentInput" type="text" placeholder="Agregar comentario..." class="flex-1 bg-transparent px-3 py-2 text-xs outline-none">
+                <button onclick="addComment()" class="bg-black text-white px-4 py-1.5 rounded-lg text-[10px] font-bold transition active:scale-95">Enviar</button>
+            </div>
+        </div>
+    </div>
+
+    <aside id="sidebar" class="sidebar flex flex-col p-6">
+        <div class="flex justify-between items-center mb-10">
+            <h1 class="text-xl font-bold tracking-tight">MetaProject</h1>
+            <button onclick="toggleMenu()" class="lg:hidden text-gray-400"><i data-lucide="x"></i></button>
+        </div>
+        <nav class="flex-1 space-y-1">
+            <a href="index.html" class="flex items-center gap-3 px-4 py-3 text-gray-500 hover:bg-gray-50 rounded-xl transition text-sm"><i data-lucide="layout-grid" class="w-4 h-4"></i> Dashboard</a>
+            <a href="requerimientos.html" class="flex items-center gap-3 px-4 py-3 bg-black text-white rounded-xl font-semibold text-sm shadow-lg"><i data-lucide="layers" class="w-4 h-4"></i> Requerimientos</a>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <header class="h-16 px-6 lg:px-10 flex items-center justify-between sticky top-0 bg-white/80 backdrop-blur-md z-50 border-b border-gray-100">
+            <button onclick="toggleMenu()" class="lg:hidden text-gray-500"><i data-lucide="menu"></i></button>
+            <div class="flex items-center gap-4 ml-auto relative">
+                <div class="w-8 h-8 bg-black rounded-full flex items-center justify-center text-white text-[10px] font-bold">AM</div>
+            </div>
+        </header>
+
+        <div class="p-6 lg:p-10 max-w-7xl mx-auto">
+            <div class="flex flex-col md:flex-row justify-between items-end gap-4 mb-10">
+                <div>
+                    <h2 class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-2">Módulo de Gestión</h2>
+                    <h1 class="text-3xl font-bold tracking-tight">Requerimientos</h1>
+                </div>
+                <button onclick="openForm()" class="bg-black text-white px-6 py-3 rounded-full text-xs font-bold shadow-xl flex items-center gap-2 transition active:scale-95">
+                    <i data-lucide="plus" class="w-4 h-4"></i> Nuevo Requerimiento
+                </button>
+            </div>
+
+            <div class="flex gap-2 mb-10 overflow-x-auto pb-2" id="filterContainer">
+                <button onclick="filterBy('todos')" class="f-btn active px-6 py-2 rounded-full text-[11px] font-bold bg-black text-white transition">Todos</button>
+                <button onclick="filterBy('critica')" class="f-btn px-6 py-2 rounded-full text-[11px] font-bold bg-white border border-gray-100 transition">Críticos</button>
+            </div>
+
+            <div id="reqGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </div>
+    </main>
+
+    <script>
+        const currentUser = "AM";
+        let activeReqId = null;
+
+        let reqs = [
+            { id: 1, title: 'API Integration', obj: 'Unificar servicios de base de datos.', act: 'Proceso manual y lento.', exp: 'Automatizado al 100%.', prio: 'critica', logs: ['Creado por AM'], comments: [{ id: 101, text: 'Ya solicité las credenciales.', author: 'AM', date: '26/02 18:00' }] }
+        ];
+
+        function render(f = 'todos') {
+            const grid = document.getElementById('reqGrid');
+            const filtered = reqs.filter(r => f === 'todos' || r.prio === f);
+
+            grid.innerHTML = filtered.map(r => `
+                <div class="apple-card p-6 min-h-[280px] flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between mb-4">
+                            <span class="px-3 py-1 rounded-full text-[9px] font-black uppercase prio-${r.prio}">${r.prio}</span>
+                            <div class="relative">
+                                <button onclick="toggleDropdown('drop-${r.id}')" class="text-gray-300 hover:text-black transition"><i data-lucide="more-horizontal"></i></button>
+                                <div id="drop-${r.id}" class="apple-dropdown p-2 right-0">
+                                    <button onclick="openDetails(${r.id})" class="w-full text-left px-3 py-2 text-xs font-bold hover:bg-gray-50 rounded-lg">Ver Detalles</button>
+                                    <button onclick="openForm(${r.id})" class="w-full text-left px-3 py-2 text-xs font-bold hover:bg-gray-50 rounded-lg">Editar</button>
+                                    <button onclick="confirmDel(${r.id})" class="w-full text-left px-3 py-2 text-xs font-bold text-red-500 hover:bg-red-50 rounded-lg">Eliminar</button>
+                                </div>
+                            </div>
+                        </div>
+                        <h3 class="font-bold text-sm mb-2">${r.title}</h3>
+                        <p class="text-xs text-gray-400 line-clamp-3">${r.obj}</p>
+                    </div>
+                    <div class="mt-6 pt-4 border-t border-gray-50 flex justify-between items-center">
+                        <span class="text-[9px] font-bold text-gray-300 uppercase">${r.logs.length} Cambios</span>
+                        <div class="flex items-center gap-1.5 text-gray-300">
+                             <i data-lucide="message-square" class="w-4 h-4"></i>
+                             <span class="text-[10px] font-bold">${r.comments.length}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        /* --- LÓGICA DEL FORMULARIO --- */
+        function openForm(id = null) {
+            document.getElementById('modalTitle').innerText = id ? "Editar Requerimiento" : "Nuevo Requerimiento";
+            document.getElementById('editId').value = id || "";
+            
+            if (id) {
+                const r = reqs.find(x => x.id === id);
+                document.getElementById('reqTitle').value = r.title;
+                document.getElementById('reqObj').value = r.obj;
+                document.getElementById('reqActual').value = r.act;
+                document.getElementById('reqEspera').value = r.exp;
+                document.getElementById('reqPrio').value = r.prio;
+            } else {
+                ['reqTitle', 'reqObj', 'reqActual', 'reqEspera'].forEach(el => document.getElementById(el).value = '');
+                document.getElementById('reqPrio').value = 'media';
+            }
+            openModal('reqModal');
+        }
+
+        function saveReq() {
+            const id = document.getElementById('editId').value;
+            const data = {
+                title: document.getElementById('reqTitle').value,
+                obj: document.getElementById('reqObj').value,
+                act: document.getElementById('reqActual').value,
+                exp: document.getElementById('reqEspera').value,
+                prio: document.getElementById('reqPrio').value
+            };
+
+            if (id) {
+                const idx = reqs.findIndex(x => x.id == id);
+                reqs[idx] = { ...reqs[idx], ...data };
+                reqs[idx].logs.push('Editado el ' + new Date().toLocaleDateString('es-ES'));
+            } else {
+                reqs.unshift({ ...data, id: Date.now(), logs: ['Creado por ' + currentUser], comments: [] });
+            }
+            
+            closeModal('reqModal');
+            render();
+            if(activeReqId === parseInt(id)) renderDetailsContent(); // Si el drawer está abierto editando
+        }
+
+        /* --- LÓGICA DEL DRAWER (DETALLES Y COMENTARIOS) --- */
+        function openDetails(id) {
+            activeReqId = id;
+            renderDetailsContent();
+            document.getElementById('sideDrawer').classList.add('active');
+        }
+
+        function renderDetailsContent() {
+            const r = reqs.find(x => x.id === activeReqId);
+            if (!r) return;
+
+            document.getElementById('drawerBody').innerHTML = `
+                <div>
+                    <label class="text-[9px] font-bold text-gray-400 uppercase">Situación Actual</label>
+                    <p class="text-xs text-gray-600 bg-gray-50 p-3 rounded-xl mt-1">${r.act || 'N/A'}</p>
+                </div>
+                <div>
+                    <label class="text-[9px] font-bold text-gray-400 uppercase">Situación Esperada</label>
+                    <p class="text-xs text-gray-600 bg-gray-50 p-3 rounded-xl mt-1">${r.exp || 'N/A'}</p>
+                </div>
+                
+                <div class="pt-4 border-t border-gray-100">
+                    <h4 class="text-[10px] font-bold text-gray-400 uppercase mb-3">Comentarios (${r.comments.length})</h4>
+                    <div class="space-y-3">
+                        ${r.comments.map(c => `
+                            <div class="bg-gray-50 p-3 rounded-xl relative group">
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-[10px] font-bold">${c.author}</span>
+                                    <span class="text-[9px] text-gray-400">${c.date}</span>
+                                </div>
+                                <p class="text-xs text-gray-600">${c.text}</p>
+                                
+                                ${c.author === currentUser ? `
+                                    <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 bg-gray-50">
+                                        <button onclick="editComment(${c.id})" class="text-blue-500 hover:text-blue-700 p-1"><i data-lucide="edit-2" class="w-3 h-3"></i></button>
+                                        <button onclick="deleteComment(${c.id})" class="text-red-500 hover:text-red-700 p-1"><i data-lucide="trash" class="w-3 h-3"></i></button>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        `).join('') || '<p class="text-xs text-gray-400 italic">No hay comentarios.</p>'}
+                    </div>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        function addComment() {
+            const input = document.getElementById('newCommentInput');
+            if (!input.value.trim() || !activeReqId) return;
+            
+            const r = reqs.find(x => x.id === activeReqId);
+            const now = new Date();
+            const dateStr = `${now.getDate()}/${now.getMonth()+1} ${now.getHours()}:${now.getMinutes()}`;
+            
+            r.comments.push({ id: Date.now(), text: input.value.trim(), author: currentUser, date: dateStr });
+            input.value = '';
+            
+            renderDetailsContent();
+            render(); 
+        }
+
+        function editComment(commentId) {
+            const r = reqs.find(x => x.id === activeReqId);
+            const c = r.comments.find(x => x.id === commentId);
+            const newText = prompt("Editar comentario:", c.text);
+            if (newText !== null && newText.trim() !== "") {
+                c.text = newText.trim();
+                renderDetailsContent();
+            }
+        }
+
+        function deleteComment(commentId) {
+            if(!confirm("¿Eliminar comentario?")) return;
+            const r = reqs.find(x => x.id === activeReqId);
+            r.comments = r.comments.filter(c => c.id !== commentId);
+            renderDetailsContent();
+            render();
+        }
+
+        /* --- UTILIDADES --- */
+        function confirmDel(id) {
+            openModal('deleteModal');
+            document.getElementById('confirmDeleteBtn').onclick = () => {
+                reqs = reqs.filter(x => x.id !== id);
+                closeModal('deleteModal');
+                render();
+            };
+        }
+
+        function filterBy(val) {
+            document.querySelectorAll('.f-btn').forEach(btn => {
+                btn.classList.remove('active', 'bg-black', 'text-white');
+                btn.classList.add('bg-white', 'text-gray-500');
+            });
+            event.target.classList.add('active', 'bg-black', 'text-white');
+            event.target.classList.remove('bg-white', 'text-gray-500');
+            render(val);
+        }
+
+        function autoExpand(t) { t.style.height = 'auto'; t.style.height = t.scrollHeight + 'px'; }
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+        function openDrawer() { document.getElementById('sideDrawer').classList.add('active'); }
+        function closeDrawer() { document.getElementById('sideDrawer').classList.remove('active'); activeReqId = null; }
+        
+        function toggleDropdown(id) { 
+            document.querySelectorAll('.apple-dropdown').forEach(d => { if(d.id !== id) d.classList.remove('active'); });
+            document.getElementById(id).classList.toggle('active'); 
+        }
+        function toggleMenu() { document.getElementById('sidebar').classList.toggle('active'); }
+
+        // Cerrar dropdowns si haces clic fuera
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.relative')) {
+                document.querySelectorAll('.apple-dropdown').forEach(d => d.classList.remove('active'));
+            }
+        });
+
+        render();
+    </script>
+</body>
+</html>
