@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MetaProject | Gestión</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --apple-bg: #F5F5F7; }
+        * { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+        body { background-color: var(--apple-bg); color: #1D1D1F; overflow-x: hidden; }
+
+        .sidebar { width: 260px; height: 100vh; position: fixed; background: rgba(255,255,255,0.8); backdrop-filter: saturate(180%) blur(20px); border-right: 1px solid rgba(0,0,0,0.08); z-index: 100; }
+        .main-content { margin-left: 260px; min-height: 100vh; }
+
+        .apple-card { background: #FFFFFF; border-radius: 22px; box-shadow: 0 4px 24px rgba(0,0,0,0.04); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid transparent; }
+        .apple-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.08); }
+        
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.3); backdrop-filter: blur(12px); display: none; align-items: center; justify-content: center; z-index: 1000; }
+        .modal-overlay.active { display: flex; }
+        .modal-content { background: white; width: 100%; max-width: 600px; border-radius: 30px; padding: 40px; max-height: 90vh; overflow-y: auto; }
+
+        .details-drawer { position: fixed; top: 0; right: -450px; width: 450px; height: 100vh; background: white; z-index: 1100; box-shadow: -10px 0 40px rgba(0,0,0,0.1); transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1); padding: 40px; display: flex; flex-direction: column; }
+        .details-drawer.active { right: 0; }
+
+        .apple-dropdown { position: absolute; top: 100%; right: 0; margin-top: 10px; background: rgba(255,255,255,0.95); backdrop-filter: blur(20px); border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.05); width: 220px; opacity: 0; visibility: hidden; z-index: 200; transition: all 0.2s; }
+        .apple-dropdown.active { opacity: 1; visibility: visible; }
+
+        .prio-critica, .prio-urgente { background: #FF3B30; color: white; }
+        .prio-alta { background: #FFF1F0; color: #FF3B30; border: 1px solid #FFA39E; }
+        .prio-media { background: #FFFBE6; color: #FAAD14; border: 1px solid #FFE58F; }
+        .prio-baja { background: #F6FFED; color: #52C41A; border: 1px solid #B7EB8F; }
+        
+        textarea { resize: none; }
+    </style>
+</head>
+<body>
+
+    <div id="detailsDrawer" class="details-drawer">
+        <div class="flex justify-between items-center mb-8">
+            <h2 class="text-2xl font-bold">Detalles</h2>
+            <button onclick="closeDrawer()" class="p-2 hover:bg-gray-100 rounded-full transition"><i data-lucide="x"></i></button>
+        </div>
+        <div id="drawerContent" class="flex-1 overflow-y-auto space-y-8 pr-2">
+            </div>
+        <div class="mt-6 pt-6 border-t">
+            <div class="flex gap-3 bg-gray-50 p-2 rounded-full border border-gray-100">
+                <input id="newCommentInput" type="text" placeholder="Escribe un comentario..." class="flex-1 bg-transparent px-4 py-2 text-sm outline-none">
+                <button onclick="addComment()" class="bg-black text-white p-2.5 rounded-full hover:scale-105 transition"><i data-lucide="send" class="w-4 h-4"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <div id="reqModal" class="modal-overlay">
+        <div class="modal-content">
+            <h2 id="modalTitle" class="text-2xl font-bold mb-8 tracking-tight">Nuevo Requerimiento</h2>
+            <input type="hidden" id="editId">
+            <div class="space-y-6">
+                <div>
+                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Título</label>
+                    <input id="reqTitle" type="text" class="w-full bg-gray-50 p-4 rounded-2xl border-none outline-none focus:ring-2 focus:ring-black/5 mt-1 font-semibold">
+                </div>
+                <div>
+                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Objetivo</label>
+                    <textarea id="reqObj" class="w-full bg-gray-50 p-4 rounded-2xl border-none outline-none focus:ring-2 focus:ring-black/5 mt-1 text-sm h-24"></textarea>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Situación Actual</label>
+                        <textarea id="reqActual" class="w-full bg-gray-50 p-4 rounded-2xl border-none outline-none focus:ring-2 focus:ring-black/5 mt-1 text-sm h-20"></textarea>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Situación Esperada</label>
+                        <textarea id="reqEspera" class="w-full bg-gray-50 p-4 rounded-2xl border-none outline-none focus:ring-2 focus:ring-black/5 mt-1 text-sm h-20"></textarea>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Prioridad</label>
+                        <select id="reqPrio" class="w-full bg-gray-50 p-4 rounded-2xl border-none outline-none mt-1 font-bold text-sm">
+                            <option value="critica">Crítica</option>
+                            <option value="urgente">Urgente</option>
+                            <option value="alta">Alta</option>
+                            <option value="media">Media</option>
+                            <option value="baja">Baja</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Asignar a</label>
+                        <select id="reqAssign" class="w-full bg-gray-50 p-4 rounded-2xl border-none outline-none mt-1 font-bold text-sm">
+                            <option value="Adrian Monzón">Adrian Monzón</option>
+                            <option value="Juan Delgado">Juan Delgado</option>
+                            <option value="Equipo QA">Equipo QA</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="flex justify-end gap-4 mt-10">
+                <button onclick="closeModal('reqModal')" class="text-sm font-bold text-gray-400 px-6 hover:text-black transition">Cancelar</button>
+                <button onclick="saveReq()" class="bg-black text-white px-10 py-3.5 rounded-full text-sm font-bold shadow-xl active:scale-95 transition">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <aside class="sidebar p-8">
+        <h1 class="text-2xl font-black mb-12 tracking-tighter">MetaProject</h1>
+        <nav class="space-y-2">
+            <a href="#" class="flex items-center gap-4 px-5 py-3.5 text-gray-400 hover:bg-gray-50 rounded-2xl transition text-sm font-medium"><i data-lucide="layout-grid" class="w-5 h-5"></i> Dashboard</a>
+            <a href="#" class="flex items-center gap-4 px-5 py-3.5 bg-black text-white rounded-2xl shadow-xl shadow-black/10 text-sm font-bold"><i data-lucide="layers" class="w-5 h-5"></i> Requerimientos</a>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <header class="h-20 px-10 flex items-center justify-between sticky top-0 bg-white/60 backdrop-blur-xl z-50">
+            <div class="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
+                <span>Módulo de Gestión</span>
+            </div>
+            <div class="flex items-center gap-6 relative">
+                <div class="relative">
+                    <button onclick="toggleDrop('notifDrop')" class="text-gray-400 hover:text-black transition p-2"><i data-lucide="bell" class="w-5 h-5"></i></button>
+                    <div id="notifDrop" class="apple-dropdown p-4 right-0">
+                        <p class="text-[10px] font-black text-gray-400 uppercase mb-3">Notificaciones</p>
+                        <div class="text-xs text-gray-500 py-2 border-t border-gray-50">No tienes alertas nuevas.</div>
+                    </div>
+                </div>
+                <div class="relative">
+                    <button onclick="toggleDrop('userDrop')" class="w-10 h-10 bg-black rounded-full flex items-center justify-center text-white text-[10px] font-bold shadow-lg hover:scale-105 transition">AM</button>
+                    <div id="userDrop" class="apple-dropdown p-2 right-0">
+                        <button class="w-full text-left px-4 py-3 text-xs font-bold hover:bg-gray-50 rounded-xl transition">Mi Perfil</button>
+                        <button class="w-full text-left px-4 py-3 text-xs font-bold text-red-500 hover:bg-red-50 rounded-xl transition">Cerrar Sesión</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="p-12 max-w-7xl mx-auto">
+            <div class="flex justify-between items-end mb-12">
+                <h1 class="text-4xl font-bold tracking-tight">Requerimientos de Proyecto</h1>
+                <button onclick="openCreate()" class="bg-black text-white px-8 py-4 rounded-full text-sm font-bold shadow-2xl flex items-center gap-3 hover:scale-105 transition active:scale-95">
+                    <i data-lucide="plus" class="w-5 h-5"></i> Nuevo Requerimiento
+                </button>
+            </div>
+
+            <div class="flex gap-3 mb-12 overflow-x-auto pb-2" id="filters">
+                <button onclick="filter('todos')" class="filter-btn active bg-black text-white px-7 py-2.5 rounded-full text-xs font-bold transition">Todos</button>
+                <button onclick="filter('pendiente')" class="filter-btn bg-white text-gray-500 px-7 py-2.5 rounded-full text-xs font-bold border border-gray-100 hover:bg-gray-50 transition">Pendientes</button>
+                <button onclick="filter('revisión')" class="filter-btn bg-white text-gray-500 px-7 py-2.5 rounded-full text-xs font-bold border border-gray-100 hover:bg-gray-50 transition">Pendiente de Revisión</button>
+                <button onclick="filter('aprobado')" class="filter-btn bg-white text-gray-500 px-7 py-2.5 rounded-full text-xs font-bold border border-gray-100 hover:bg-gray-50 transition">Aprobados</button>
+                <button onclick="filter('urgente')" class="filter-btn bg-white text-red-500 px-7 py-2.5 rounded-full text-xs font-bold border border-gray-100 hover:bg-red-50 transition">Urgentes</button>
+            </div>
+
+            <div id="reqGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
+        </div>
+    </main>
+
+    <script>
+        let currentIdForDetails = null;
+        let reqs = [
+            { id: 1, title: 'Sincronización de Base de Datos', obj: 'Optimizar Webhooks de Supabase.', act: 'Alta latencia en el dashboard', exp: 'Sincronización en tiempo real', prio: 'alta', assign: 'Adrian Monzón', status: 'aprobado', date: '26 Feb', comments: ['Buen avance', 'Revisar tokens de acceso'] },
+            { id: 2, title: 'Refactorización de Modales', obj: 'Implementar lógica auto-resize.', act: 'Los campos son estáticos', exp: 'Campos dinámicos según contenido', prio: 'media', assign: 'Juan Delgado', status: 'revisión', date: '25 Feb', comments: [] }
+        ];
+
+        function render(f = 'todos') {
+            const grid = document.getElementById('reqGrid');
+            const filtered = reqs.filter(r => f === 'todos' || r.status === f || (f === 'urgente' && r.prio === 'urgente'));
+            
+            grid.innerHTML = filtered.map(r => `
+                <div class="apple-card p-8 min-h-[300px] flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between mb-6">
+                            <span class="px-4 py-1.5 rounded-lg text-[10px] font-black uppercase prio-${r.prio}">${r.prio}</span>
+                            <div class="relative">
+                                <button onclick="toggleDrop('drop-${r.id}')" class="text-gray-300 hover:text-black transition"><i data-lucide="more-horizontal"></i></button>
+                                <div id="drop-${r.id}" class="apple-dropdown p-2 right-0">
+                                    <button onclick="openEdit(${r.id})" class="w-full text-left px-4 py-3 text-xs font-bold hover:bg-gray-50 rounded-xl transition">Editar</button>
+                                    <button onclick="deleteReq(${r.id})" class="w-full text-left px-4 py-3 text-xs font-bold text-red-500 hover:bg-red-50 rounded-xl transition">Eliminar</button>
+                                </div>
+                            </div>
+                        </div>
+                        <h3 class="font-bold text-lg mb-2 leading-tight">${r.title}</h3>
+                        <p class="text-xs text-gray-400 font-medium mb-4 italic">${r.date} • ${r.assign}</p>
+                        <p class="text-sm text-gray-500 line-clamp-3">${r.obj}</p>
+                    </div>
+                    <div class="mt-8 pt-6 border-t border-gray-50 flex justify-between items-center">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] font-black uppercase text-blue-500 italic">${r.status}</span>
+                            ${r.status === 'revisión' ? `
+                                <button onclick="changeStatus(${r.id}, 'aprobado')" class="p-1.5 bg-green-50 text-green-500 rounded-lg hover:scale-110 transition"><i data-lucide="check" class="w-3 h-3"></i></button>
+                                <button onclick="changeStatus(${r.id}, 'pendiente')" class="p-1.5 bg-red-50 text-red-500 rounded-lg hover:scale-110 transition"><i data-lucide="x" class="w-3 h-3"></i></button>
+                            ` : ''}
+                        </div>
+                        <button onclick="openDetails(${r.id})" class="text-xs font-bold text-black hover:underline underline-offset-4">Ver detalles</button>
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function openDetails(id) {
+            const r = reqs.find(x => x.id === id);
+            currentIdForDetails = id;
+            const content = document.getElementById('drawerContent');
+            content.innerHTML = `
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Situación Actual</label>
+                    <p class="text-sm text-gray-600 bg-gray-50 p-4 rounded-2xl border border-gray-100">${r.act || 'Sin especificar'}</p>
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Situación Esperada</label>
+                    <p class="text-sm text-gray-600 bg-gray-50 p-4 rounded-2xl border border-gray-100">${r.exp || 'Sin especificar'}</p>
+                </div>
+                <div class="pt-8 border-t">
+                    <h4 class="text-xs font-black uppercase tracking-widest text-gray-400 mb-6">Comentarios (${r.comments.length})</h4>
+                    <div class="space-y-4" id="commentList">
+                        ${r.comments.map(c => `<div class="bg-gray-50 p-4 rounded-2xl text-xs text-gray-600 font-medium border border-gray-100">${c}</div>`).join('') || '<p class="text-xs text-gray-400 italic">No hay comentarios aún.</p>'}
+                    </div>
+                </div>
+            `;
+            document.getElementById('detailsDrawer').classList.add('active');
+        }
+
+        function addComment() {
+            const input = document.getElementById('newCommentInput');
+            if(!input.value || !currentIdForDetails) return;
+            const r = reqs.find(x => x.id === currentIdForDetails);
+            r.comments.push(input.value);
+            input.value = '';
+            openDetails(currentIdForDetails);
+        }
+
+        function openEdit(id) {
+            const r = reqs.find(x => x.id === id);
+            document.getElementById('modalTitle').innerText = "Editar Requerimiento";
+            document.getElementById('editId').value = r.id;
+            document.getElementById('reqTitle').value = r.title;
+            document.getElementById('reqObj').value = r.obj;
+            document.getElementById('reqActual').value = r.act;
+            document.getElementById('reqEspera').value = r.exp;
+            document.getElementById('reqPrio').value = r.prio;
+            document.getElementById('reqAssign').value = r.assign;
+            document.getElementById('reqModal').classList.add('active');
+        }
+
+        function openCreate() {
+            document.getElementById('modalTitle').innerText = "Nuevo Requerimiento";
+            document.getElementById('editId').value = "";
+            ['reqTitle', 'reqObj', 'reqActual', 'reqEspera'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('reqModal').classList.add('active');
+        }
+
+        function saveReq() {
+            const id = document.getElementById('editId').value;
+            const data = {
+                title: document.getElementById('reqTitle').value,
+                obj: document.getElementById('reqObj').value,
+                act: document.getElementById('reqActual').value,
+                exp: document.getElementById('reqEspera').value,
+                prio: document.getElementById('reqPrio').value,
+                assign: document.getElementById('reqAssign').value
+            };
+            if(id) {
+                const idx = reqs.findIndex(x => x.id == id);
+                reqs[idx] = {...reqs[idx], ...data};
+            } else {
+                reqs.unshift({...data, id: Date.now(), status: 'revisión', date: 'Hoy', comments: []});
+            }
+            closeModal('reqModal');
+            render();
+        }
+
+        function filter(f) {
+            document.querySelectorAll('.filter-btn').forEach(b => {
+                b.classList.remove('active', 'bg-black', 'text-white');
+                b.classList.add('bg-white', 'text-gray-500');
+            });
+            event.target.classList.add('active', 'bg-black', 'text-white');
+            render(f);
+        }
+
+        function changeStatus(id, s) {
+            reqs.find(x => x.id === id).status = s;
+            render();
+        }
+
+        function toggleDrop(id) { 
+            document.querySelectorAll('.apple-dropdown').forEach(d => { if(d.id !== id) d.classList.remove('active'); });
+            document.getElementById(id).classList.toggle('active'); 
+        }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+        function closeDrawer() { document.getElementById('detailsDrawer').classList.remove('active'); }
+        function deleteReq(id) { reqs = reqs.filter(x => x.id !== id); render(); }
+
+        render();
+    </script>
+</body>
+</html>
