@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MetaProject | Administración</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --apple-bg: #F5F5F7; --apple-card: #FFFFFF; }
+        * { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+        body { background-color: var(--apple-bg); color: #1D1D1F; margin: 0; overflow-x: hidden; }
+
+        .sidebar { width: 260px; height: 100vh; position: fixed; background: rgba(255,255,255,0.8); backdrop-filter: saturate(180%) blur(20px); border-right: 1px solid rgba(0,0,0,0.08); z-index: 100; transform: translateX(-100%); transition: transform 0.3s ease; }
+        @media (min-width: 1024px) { .sidebar { transform: translateX(0); } .main-content { margin-left: 260px; } }
+        .sidebar.active { transform: translateX(0); }
+
+        .apple-card { background: var(--apple-card); border-radius: 24px; box-shadow: 0 4px 24px rgba(0,0,0,0.04); border: 1px solid transparent; transition: all 0.3s ease; }
+        
+        /* Badges Estatus Usuario */
+        .u-activo { background: #E3F9E5; color: #1DB446; border: 1px solid #B7EB8F; }
+        .u-pendiente { background: #FFFBE6; color: #FAAD14; border: 1px solid #FFE58F; }
+        .u-bloqueado { background: #FFF1F0; color: #FF3B30; border: 1px solid #FFA39E; }
+
+        /* Trazabilidad Modules */
+        .mod-req { color: #007AFF; background: #E5F1FF; }
+        .mod-plan { color: #8A2BE2; background: #F3E8FF; }
+        .mod-pres { color: #1DB446; background: #E3F9E5; }
+        .mod-auth { color: #FF9500; background: #FFF4E5; }
+
+        /* Toggle Tabs */
+        .toggle-btn { position: relative; display: inline-flex; background: #E8E8ED; border-radius: 12px; padding: 4px; }
+        .toggle-option { position: relative; z-index: 10; padding: 8px 24px; font-size: 12px; font-weight: 700; color: #8E8E93; cursor: pointer; transition: color 0.3s ease; }
+        .toggle-option.active { color: #1D1D1F; }
+        .toggle-indicator { position: absolute; top: 4px; bottom: 4px; left: 4px; background: #FFFFFF; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 1; width: calc(50% - 4px); }
+        [data-tab="actividad"] .toggle-indicator { transform: translateX(100%); }
+
+        .view-section { display: none; opacity: 0; transition: opacity 0.4s ease; }
+        .view-section.active { display: block; opacity: 1; animation: fadeIn 0.4s ease forwards; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Modales */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 1200; padding: 20px; }
+        .modal-overlay.active { display: flex; }
+        .modal-content { background: white; width: 100%; max-width: 450px; border-radius: 28px; padding: 32px; position: relative; }
+        
+        .apple-dropdown { position: absolute; top: 100%; right: 0; margin-top: 8px; background: rgba(255,255,255,0.98); backdrop-filter: blur(20px); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.05); width: 180px; opacity: 0; visibility: hidden; z-index: 200; transition: all 0.2s; }
+        .apple-dropdown.active { opacity: 1; visibility: visible; }
+    </style>
+</head>
+<body>
+
+    <div id="inviteModal" class="modal-overlay">
+        <div class="modal-content">
+            <button onclick="closeModal('inviteModal')" class="absolute top-6 right-6 text-gray-400 hover:text-black transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+            <h3 class="text-xl font-bold mb-6 tracking-tight">Invitar Usuario</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Correo Electrónico</label>
+                    <input type="email" id="inviteEmail" placeholder="usuario@empresa.com" class="w-full bg-gray-50 p-4 rounded-xl border-none outline-none focus:ring-1 focus:ring-gray-200 mt-1 font-medium text-sm">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Rol Asignado</label>
+                    <select id="inviteRole" class="w-full bg-gray-50 p-4 rounded-xl border-none outline-none focus:ring-1 focus:ring-gray-200 mt-1 font-bold text-sm text-gray-700">
+                        <option value="Administrador">Administrador</option>
+                        <option value="Editor" selected>Editor</option>
+                        <option value="Lector">Lector</option>
+                    </select>
+                </div>
+            </div>
+            <div class="flex justify-end gap-3 mt-8">
+                <button onclick="closeModal('inviteModal')" class="px-6 py-2.5 rounded-full text-xs font-bold text-gray-400 hover:bg-gray-100 transition">Cancelar</button>
+                <button onclick="sendInvite()" class="bg-black text-white px-8 py-2.5 rounded-full text-xs font-bold shadow-lg transition active:scale-95 flex items-center gap-2"><i data-lucide="send" class="w-3 h-3"></i> Enviar Invitación</button>
+            </div>
+        </div>
+    </div>
+
+    <aside id="sidebar" class="sidebar flex flex-col p-6">
+        <div class="flex justify-between items-center mb-10">
+            <a href="index.html" class="text-xl font-bold tracking-tight hover:opacity-70 transition">MetaProject</a>
+            <button onclick="toggleMenu()" class="lg:hidden text-gray-400"><i data-lucide="x"></i></button>
+        </div>
+        
+        <nav class="flex-1 space-y-1">
+            <a href="index.html" class="flex items-center gap-3 px-4 py-3 text-gray-500 hover:bg-gray-50 rounded-xl transition text-sm">
+                <i data-lucide="layout-grid" class="w-4 h-4"></i> Dashboard
+            </a>
+            <a href="requerimientos.html" class="flex items-center gap-3 px-4 py-3 text-gray-500 hover:bg-gray-50 rounded-xl transition text-sm">
+                <i data-lucide="layers" class="w-4 h-4"></i> Requerimientos
+            </a>
+            <a href="plan_trabajo.html" class="flex items-center gap-3 px-4 py-3 text-gray-500 hover:bg-gray-50 rounded-xl transition text-sm">
+                <i data-lucide="calendar" class="w-4 h-4"></i> Plan de Trabajo
+            </a>
+            <a href="presupuesto.html" class="flex items-center gap-3 px-4 py-3 text-gray-500 hover:bg-gray-50 rounded-xl transition text-sm">
+                <i data-lucide="dollar-sign" class="w-4 h-4"></i> Presupuesto
+            </a>
+            <a href="administracion.html" id="menu-admin" class="flex items-center gap-3 px-4 py-3 bg-black text-white rounded-xl font-semibold text-sm shadow-lg transition">
+                <i data-lucide="shield" class="w-4 h-4"></i> Administración
+            </a>
+        </nav>
+
+        <div class="mt-auto pt-6 border-t border-gray-100">
+            <p class="text-[9px] text-gray-400 font-bold uppercase tracking-widest text-center leading-relaxed">Todos los derechos reservados<br>AMG ©️ 2026</p>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="h-16 px-6 lg:px-10 flex items-center justify-between sticky top-0 bg-white/80 backdrop-blur-md z-50 border-b border-gray-100">
+            <button onclick="toggleMenu()" class="lg:hidden text-gray-500"><i data-lucide="menu"></i></button>
+            <div class="flex items-center gap-4 ml-auto relative">
+                <div class="relative">
+                    <button onclick="toggleDropdown('notifMenu')" class="text-gray-400 hover:text-black transition p-2"><i data-lucide="bell" class="w-5 h-5"></i></button>
+                    <div id="notifMenu" class="apple-dropdown p-2 right-0">
+                        <div class="px-4 py-2 border-b border-gray-50 text-[10px] font-bold text-gray-400 uppercase">Notificaciones</div>
+                        <div class="p-3 text-xs font-medium text-gray-500">No hay nuevas notificaciones</div>
+                    </div>
+                </div>
+                <div class="relative">
+                    <button onclick="toggleDropdown('userMenu')" class="w-8 h-8 bg-black rounded-full flex items-center justify-center text-white text-[10px] font-bold cursor-pointer hover:scale-105 transition">AM</button>
+                    <div id="userMenu" class="apple-dropdown p-2 right-0">
+                        <div class="px-4 py-2 border-b border-gray-50 mb-1"><p class="text-[11px] font-bold">Adrian Monzón</p></div>
+                        <a href="perfil.html" class="flex items-center gap-2 px-3 py-2 text-xs font-medium hover:bg-gray-50 rounded-lg"><i data-lucide="user" class="w-3 h-3 text-gray-400"></i> Mi Perfil</a>
+                        <button onclick="logout()" class="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium text-red-500 hover:bg-red-50 rounded-lg"><i data-lucide="log-out" class="w-3 h-3 text-red-400"></i> Cerrar Sesión</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="p-6 lg:p-10 max-w-7xl mx-auto">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-10">
+                <div>
+                    <h2 class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-2">Centro de Seguridad</h2>
+                    <h1 class="text-3xl font-bold tracking-tight">Administración</h1>
+                </div>
+                
+                <div class="toggle-btn" id="viewToggle" data-tab="usuarios">
+                    <div class="toggle-indicator"></div>
+                    <div class="toggle-option active" onclick="switchTab('usuarios')">Usuarios</div>
+                    <div class="toggle-option" onclick="switchTab('actividad')">Actividad</div>
+                </div>
+            </div>
+
+            <div id="view-usuarios" class="view-section active space-y-8">
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="apple-card p-6 flex flex-col justify-center bg-gray-50/50">
+                        <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Usuarios Activos</p>
+                        <p class="text-4xl font-black tracking-tight text-gray-900" id="kpiActivos">0</p>
+                    </div>
+                    <div class="apple-card p-6 flex flex-col justify-center">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-[10px] text-yellow-600 font-bold uppercase tracking-widest mb-1">Solicitudes Pendientes</p>
+                                <p class="text-4xl font-black tracking-tight text-yellow-600" id="kpiPendientes">0</p>
+                            </div>
+                            <i data-lucide="user-plus" class="w-6 h-6 text-yellow-500 opacity-50"></i>
+                        </div>
+                    </div>
+                    <div class="apple-card p-6 flex flex-col justify-center">
+                        <p class="text-[10px] text-red-500 font-bold uppercase tracking-widest mb-1">Accesos Bloqueados</p>
+                        <p class="text-4xl font-black tracking-tight text-red-500" id="kpiBloqueados">0</p>
+                    </div>
+                </div>
+
+                <div class="apple-card p-6 md:p-8">
+                    <div class="flex justify-between items-center mb-6 pb-4 border-b border-gray-100">
+                        <h3 class="text-sm font-bold tracking-tight text-gray-900">Directorio de Accesos</h3>
+                        <button onclick="openModal('inviteModal')" class="bg-black text-white px-4 py-2 rounded-xl text-[11px] font-bold flex items-center gap-2 hover:scale-105 transition shadow-md">
+                            <i data-lucide="mail-plus" class="w-3.5 h-3.5"></i> Invitar
+                        </button>
+                    </div>
+
+                    <div class="hidden md:grid grid-cols-12 gap-4 px-6 pb-2 mb-3 border-b border-gray-200 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                        <div class="col-span-5">Usuario</div>
+                        <div class="col-span-3">Rol del Sistema</div>
+                        <div class="col-span-3 text-center">Estatus</div>
+                        <div class="col-span-1"></div>
+                    </div>
+
+                    <div id="usersContainer" class="space-y-3">
+                        </div>
+                </div>
+            </div>
+
+            <div id="view-actividad" class="view-section">
+                <div class="apple-card p-6 md:p-8">
+                    <div class="flex justify-between items-center mb-8 pb-4 border-b border-gray-100">
+                        <h3 class="text-sm font-bold tracking-tight text-gray-900">Registro de Trazabilidad (Log)</h3>
+                        <button class="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1 hover:text-black transition">
+                            <i data-lucide="download" class="w-3 h-3"></i> Exportar
+                        </button>
+                    </div>
+
+                    <div class="relative border-l-2 border-gray-100 ml-4 md:ml-6 space-y-8 pb-4" id="logsContainer">
+                        </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        function logout() { window.location.href = 'login.html'; }
+
+        // --- SISTEMA DE PESTAÑAS ---
+        function switchTab(tab) {
+            const toggle = document.getElementById('viewToggle');
+            const opts = document.querySelectorAll('.toggle-option');
+            const views = document.querySelectorAll('.view-section');
+
+            toggle.setAttribute('data-tab', tab);
+            opts.forEach(o => o.classList.remove('active'));
+            event.target.classList.add('active');
+
+            views.forEach(v => {
+                v.classList.remove('active');
+                setTimeout(() => v.style.display = 'none', 300);
+            });
+
+            setTimeout(() => {
+                const targetView = document.getElementById(`view-${tab}`);
+                targetView.style.display = 'block';
+                setTimeout(() => targetView.classList.add('active'), 10);
+            }, 300);
+        }
+
+        // --- DATOS SIMULADOS ---
+        let usuarios = [
+            { id: 1, nombre: 'Adrian Monzón', email: 'adrian@empresa.com', initials: 'AM', rol: 'Administrador', estatus: 'activo' },
+            { id: 2, nombre: 'Juan Delgado', email: 'juan.d@empresa.com', initials: 'JD', rol: 'Editor', estatus: 'activo' },
+            { id: 3, nombre: 'Laura Gómez', email: 'laura.g@empresa.com', initials: 'LG', rol: 'Lector', estatus: 'pendiente' },
+            { id: 4, nombre: 'Ex-Empleado UI', email: 'baja@empresa.com', initials: 'EX', rol: 'Lector', estatus: 'bloqueado' }
+        ];
+
+        const logs = [
+            { id: 101, user: 'Adrian Monzón', module: 'plan', action: 'Completó la actividad "Servidores AWS".', date: 'Hace 5 minutos' },
+            { id: 102, user: 'Juan Delgado', module: 'req', action: 'Creó el requerimiento "Firma Digital".', date: 'Hace 2 horas' },
+            { id: 103, user: 'Adrian Monzón', module: 'pres', action: 'Registró gasto por $4,500 USD.', date: 'Ayer, 14:30' },
+            { id: 104, user: 'Sistema', module: 'auth', action: 'Laura Gómez solicitó acceso al sistema.', date: 'Ayer, 09:15' }
+        ];
+
+        // --- RENDERIZADO USUARIOS ---
+        function renderUsuarios() {
+            const container = document.getElementById('usersContainer');
+            
+            let activos = 0, pendientes = 0, bloqueados = 0;
+
+            const html = usuarios.map(u => {
+                if(u.estatus === 'activo') activos++;
+                if(u.estatus === 'pendiente') pendientes++;
+                if(u.estatus === 'bloqueado') bloqueados++;
+
+                const bgStatus = u.estatus === 'activo' ? 'u-activo' : (u.estatus === 'pendiente' ? 'u-pendiente' : 'u-bloqueado');
+                const isPending = u.estatus === 'pendiente';
+
+                return `
+                <div class="flex flex-col md:grid md:grid-cols-12 gap-4 items-start md:items-center px-6 py-4 bg-white border border-gray-100 rounded-2xl hover:shadow-md transition group">
+                    
+                    <div class="md:col-span-5 flex items-center gap-3 w-full">
+                        <div class="w-10 h-10 rounded-full bg-black flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm">${u.initials}</div>
+                        <div>
+                            <p class="text-sm font-bold text-gray-900 leading-tight">${u.nombre}</p>
+                            <p class="text-[10px] text-gray-500 font-medium">${u.email}</p>
+                        </div>
+                    </div>
+
+                    <div class="md:col-span-3 w-full mt-2 md:mt-0">
+                        <span class="md:hidden text-[9px] font-black text-gray-400 uppercase block mb-1">Rol:</span>
+                        <select onchange="changeRole(${u.id}, this.value)" class="w-full md:w-auto bg-gray-50 px-3 py-2 rounded-lg border-none outline-none focus:ring-1 focus:ring-gray-200 text-xs font-bold text-gray-700 cursor-pointer hover:bg-gray-100 transition">
+                            <option value="Administrador" ${u.rol === 'Administrador' ? 'selected' : ''}>Administrador</option>
+                            <option value="Editor" ${u.rol === 'Editor' ? 'selected' : ''}>Editor</option>
+                            <option value="Lector" ${u.rol === 'Lector' ? 'selected' : ''}>Lector</option>
+                        </select>
+                    </div>
+
+                    <div class="md:col-span-3 flex items-center md:justify-center w-full mt-2 md:mt-0">
+                        <span class="px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest ${bgStatus} w-full md:w-auto text-center">${u.estatus}</span>
+                    </div>
+
+                    <div class="md:col-span-1 flex justify-end w-full mt-2 md:mt-0 relative">
+                        <button onclick="toggleDropdown('udrop-${u.id}')" class="text-gray-400 hover:text-black p-2 bg-gray-50 rounded-lg hover:bg-gray-200 transition"><i data-lucide="more-vertical" class="w-4 h-4"></i></button>
+                        <div id="udrop-${u.id}" class="apple-dropdown p-2 right-0 z-50">
+                            ${isPending ? `<button onclick="changeStatus(${u.id}, 'activo')" class="w-full text-left px-3 py-2 text-xs font-bold text-green-600 hover:bg-green-50 rounded-lg flex items-center gap-2"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Aprobar Acceso</button>` : ''}
+                            ${u.estatus !== 'bloqueado' ? `<button onclick="changeStatus(${u.id}, 'bloqueado')" class="w-full text-left px-3 py-2 text-xs font-bold text-yellow-600 hover:bg-yellow-50 rounded-lg flex items-center gap-2"><i data-lucide="ban" class="w-3.5 h-3.5"></i> Bloquear Acceso</button>` : ''}
+                            ${u.estatus === 'bloqueado' ? `<button onclick="changeStatus(${u.id}, 'activo')" class="w-full text-left px-3 py-2 text-xs font-bold text-blue-600 hover:bg-blue-50 rounded-lg flex items-center gap-2"><i data-lucide="unlock" class="w-3.5 h-3.5"></i> Desbloquear</button>` : ''}
+                            <hr class="my-1 border-gray-100">
+                            <button onclick="deleteUser(${u.id})" class="w-full text-left px-3 py-2 text-xs font-bold text-red-500 hover:bg-red-50 rounded-lg flex items-center gap-2"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Eliminar</button>
+                        </div>
+                    </div>
+                </div>
+                `;
+            }).join('');
+
+            container.innerHTML = html;
+            
+            document.getElementById('kpiActivos').innerText = activos;
+            document.getElementById('kpiPendientes').innerText = pendientes;
+            document.getElementById('kpiBloqueados').innerText = bloqueados;
+
+            lucide.createIcons();
+        }
+
+        // --- ACCIONES DE USUARIOS ---
+        function changeRole(id, newRole) {
+            const u = usuarios.find(x => x.id === id);
+            u.rol = newRole;
+            addLog(`Cambió el rol de ${u.nombre} a ${newRole}.`, 'auth');
+            // No requiere re-render completo para ser más ágil visualmente
+        }
+
+        function changeStatus(id, newStatus) {
+            const u = usuarios.find(x => x.id === id);
+            u.estatus = newStatus;
+            addLog(newStatus === 'activo' ? `Aprobó/Desbloqueó el acceso de ${u.nombre}.` : `Bloqueó el acceso a ${u.nombre}.`, 'auth');
+            renderUsuarios();
+        }
+
+        function deleteUser(id) {
+            const u = usuarios.find(x => x.id === id);
+            if(confirm(`¿Estás seguro de eliminar a ${u.nombre}?`)) {
+                usuarios = usuarios.filter(x => x.id !== id);
+                addLog(`Eliminó al usuario ${u.nombre} del sistema.`, 'auth');
+                renderUsuarios();
+            }
+        }
+
+        function sendInvite() {
+            const email = document.getElementById('inviteEmail').value;
+            const rol = document.getElementById('inviteRole').value;
+            if(!email) return alert("Ingresa un correo electrónico.");
+            
+            // Simular envío
+            addLog(`Envió invitación de registro a ${email} como ${rol}.`, 'auth');
+            closeModal('inviteModal');
+            alert("Invitación enviada exitosamente.");
+            document.getElementById('inviteEmail').value = '';
+        }
+
+        // --- RENDERIZADO DE ACTIVIDAD (LOGS) ---
+        function renderLogs() {
+            const container = document.getElementById('logsContainer');
+            
+            const icons = { 'req': 'layers', 'plan': 'calendar', 'pres': 'dollar-sign', 'auth': 'shield' };
+            const colors = { 'req': 'mod-req', 'plan': 'mod-plan', 'pres': 'mod-pres', 'auth': 'mod-auth' };
+
+            container.innerHTML = logs.map(l => `
+                <div class="relative pl-8 md:pl-10">
+                    <div class="absolute -left-[14px] top-0.5 w-7 h-7 rounded-full flex items-center justify-center border-4 border-white ${colors[l.module]} shadow-sm">
+                        <i data-lucide="${icons[l.module]}" class="w-3 h-3"></i>
+                    </div>
+                    
+                    <div class="bg-white border border-gray-100 p-4 rounded-xl shadow-sm inline-block w-full">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-2">
+                            <span class="text-xs font-bold text-gray-900">${l.user}</span>
+                            <span class="text-[9px] font-bold text-gray-400 uppercase tracking-widest bg-gray-50 px-2 py-1 rounded">${l.date}</span>
+                        </div>
+                        <p class="text-sm text-gray-600 font-medium">${l.action}</p>
+                    </div>
+                </div>
+            `).join('');
+            
+            lucide.createIcons();
+        }
+
+        function addLog(action, module) {
+            logs.unshift({
+                id: Date.now(),
+                user: 'Adrian Monzón', // Usuario actual simulado
+                module: module,
+                action: action,
+                date: 'Justo ahora'
+            });
+            renderLogs();
+        }
+
+        // --- UTILIDADES ---
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+        function toggleDropdown(id) { 
+            const drop = document.getElementById(id); const wasActive = drop.classList.contains('active');
+            document.querySelectorAll('.apple-dropdown').forEach(d => d.classList.remove('active'));
+            if(!wasActive) drop.classList.add('active'); 
+        }
+        function toggleMenu() { document.getElementById('sidebar').classList.toggle('active'); }
+        document.addEventListener('click', (e) => { if (!e.target.closest('.relative')) document.querySelectorAll('.apple-dropdown').forEach(d => d.classList.remove('active')); });
+
+        // Iniciar
+        renderUsuarios();
+        renderLogs();
+    </script>
+</body>
+</html>
