@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MetaProject | Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --apple-bg: #F5F5F7; --apple-card: #FFFFFF; }
+        * { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+        body { background-color: var(--apple-bg); color: #1D1D1F; margin: 0; overflow-x: hidden; }
+
+        .sidebar { width: 260px; height: 100vh; position: fixed; background: rgba(255,255,255,0.8); backdrop-filter: saturate(180%) blur(20px); border-right: 1px solid rgba(0,0,0,0.08); z-index: 100; transform: translateX(-100%); transition: transform 0.3s ease; }
+        @media (min-width: 1024px) { .sidebar { transform: translateX(0); } .main-content { margin-left: 260px; } }
+        .sidebar.active { transform: translateX(0); }
+
+        .apple-card { background: var(--apple-card); border-radius: 24px; box-shadow: 0 4px 24px rgba(0,0,0,0.04); border: 1px solid transparent; }
+        .card-dark { background: #000000; color: #FFFFFF; border-radius: 24px; }
+        
+        .gantt-track { background: #E8E8ED; height: 6px; border-radius: 10px; overflow: hidden; }
+        .gantt-fill { background: #1D1D1F; height: 100%; border-radius: 10px; transition: width 1s ease; }
+
+        .apple-dropdown { position: absolute; top: 100%; right: 0; margin-top: 8px; background: rgba(255,255,255,0.98); backdrop-filter: blur(20px); border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.05); width: 280px; opacity: 0; visibility: hidden; transform: translateY(-10px); transition: all 0.2s ease; z-index: 200; }
+        .apple-dropdown.active { opacity: 1; visibility: visible; transform: translateY(0); }
+        
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 1200; padding: 20px; }
+        .modal-overlay.active { display: flex; }
+        .modal-content { background: white; width: 100%; max-width: 500px; border-radius: 28px; padding: 32px; position: relative; }
+        
+        .hidden { display: none !important; }
+        textarea { resize: none; overflow: hidden; min-height: 40px; }
+        
+        /* Estilos de Menciones */
+        .mention-tag { color: #007AFF; background: #E5F1FF; padding: 2px 6px; border-radius: 6px; font-weight: 700; font-size: 0.9em; }
+        .mention-all { color: #FF3B30; background: #FFF1F0; padding: 2px 6px; border-radius: 6px; font-weight: 700; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+
+    <div id="editModal" class="modal-overlay">
+        <div class="modal-content relative">
+            <button onclick="closeModal('editModal')" class="absolute top-6 right-6 text-gray-400 hover:text-black transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+            <h3 class="text-xl font-bold mb-6 tracking-tight">Editar publicación</h3>
+            <textarea id="editModalInput" oninput="autoResize(this)" class="w-full text-sm outline-none bg-gray-50 p-4 rounded-xl focus:ring-1 focus:ring-gray-200 mb-6 font-medium"></textarea>
+            <div class="flex justify-end gap-3">
+                <button onclick="closeModal('editModal')" class="px-6 py-2.5 rounded-full text-xs font-bold text-gray-400 hover:bg-gray-100 transition">Descartar</button>
+                <button id="saveEditBtn" class="bg-black text-white px-8 py-2.5 rounded-full text-xs font-bold shadow-lg active:scale-95 transition">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="deleteModal" class="modal-overlay">
+        <div class="modal-content max-w-xs text-center p-8 relative">
+            <button onclick="closeModal('deleteModal')" class="absolute top-4 right-4 text-gray-400 hover:text-black transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+            <div class="w-12 h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4"><i data-lucide="alert-triangle"></i></div>
+            <h3 class="text-lg font-bold mb-2">¿Estás seguro?</h3>
+            <p class="text-xs text-gray-500 mb-8 font-medium">Esta acción no se puede deshacer.</p>
+            <div class="flex flex-col gap-2">
+                <button id="confirmDeleteBtn" class="w-full bg-red-500 text-white py-3 rounded-xl text-xs font-bold active:scale-95 transition">Continuar</button>
+                <button onclick="closeModal('deleteModal')" class="w-full py-3 rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-100 transition">Descartar</button>
+            </div>
+        </div>
+    </div>
+
+    <aside id="sidebar" class="sidebar flex flex-col p-6">
+        <div class="flex justify-between items-center mb-10">
+            <a href="index.html" class="text-xl font-bold tracking-tight hover:opacity-70 transition">MetaProject</a>
+            <button onclick="toggleMenu()" class="lg:hidden text-gray-400"><i data-lucide="x"></i></button>
+        </div>
+        
+        <nav class="flex-1 space-y-1">
+            <a href="index.html" class="flex items-center gap-3 px-4 py-3 bg-black text-white rounded-xl font-semibold text-sm shadow-lg transition">
+                <i data-lucide="layout-grid" class="w-4 h-4"></i> Dashboard
+            </a>
+            <a href="requerimientos.html" class="flex items-center gap-3 px-4 py-3 text-gray-500 hover:bg-gray-50 rounded-xl transition text-sm">
+                <i data-lucide="layers" class="w-4 h-4"></i> Requerimientos
+            </a>
+            <a href="plan_trabajo.html" class="flex items-center gap-3 px-4 py-3 text-gray-500 hover:bg-gray-50 rounded-xl transition text-sm">
+                <i data-lucide="calendar" class="w-4 h-4"></i> Plan de Trabajo
+            </a>
+            <a href="presupuesto.html" class="flex items-center gap-3 px-4 py-3 text-gray-500 hover:bg-gray-50 rounded-xl transition text-sm">
+                <i data-lucide="dollar-sign" class="w-4 h-4"></i> Presupuesto
+            </a>
+            <a href="administracion.html" id="menu-admin" class="flex items-center gap-3 px-4 py-3 text-gray-500 hover:bg-gray-50 rounded-xl transition text-sm">
+                <i data-lucide="shield" class="w-4 h-4"></i> Administración
+            </a>
+        </nav>
+
+        <div class="mt-auto pt-6 border-t border-gray-100">
+            <p class="text-[9px] text-gray-400 font-bold uppercase tracking-widest text-center leading-relaxed">Todos los derechos reservados<br>AMG ©️ 2026</p>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="h-16 px-6 lg:px-10 flex items-center justify-between sticky top-0 bg-white/80 backdrop-blur-md z-50 border-b border-gray-100">
+            <button onclick="toggleMenu()" class="lg:hidden text-gray-500"><i data-lucide="menu"></i></button>
+            
+            <div class="flex items-center gap-4 ml-auto relative">
+                
+                <div class="relative">
+                    <button onclick="toggleDropdown('notif-menu')" class="text-gray-400 hover:text-black transition p-2 relative">
+                        <i data-lucide="bell" class="w-5 h-5"></i>
+                        <span class="absolute top-1 right-1.5 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full animate-pulse"></span>
+                    </button>
+                    <div id="notif-menu" class="apple-dropdown right-0 max-h-96 flex flex-col">
+                        <div class="px-4 py-3 border-b border-gray-50 flex justify-between items-center sticky top-0 bg-white/90 backdrop-blur-md z-10 rounded-t-xl">
+                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Notificaciones (2)</span>
+                            <button class="text-[10px] text-blue-500 font-bold hover:underline">Marcar leídas</button>
+                        </div>
+                        <div class="overflow-y-auto">
+                            <div class="p-4 border-b border-gray-50 hover:bg-gray-50 transition cursor-pointer flex gap-3 items-start relative bg-blue-50/20">
+                                <div class="w-2 h-2 bg-blue-500 rounded-full absolute left-1.5 top-5"></div>
+                                <div class="w-8 h-8 rounded-full bg-black text-white text-[9px] font-bold flex items-center justify-center shrink-0">JD</div>
+                                <div>
+                                    <p class="text-xs text-gray-800 leading-snug"><span class="font-bold">Juan Delgado</span> te mencionó en un comentario.</p>
+                                    <p class="text-[10px] text-gray-400 font-medium mt-1">Hace 5 min</p>
+                                </div>
+                            </div>
+                            <div class="p-4 hover:bg-gray-50 transition cursor-pointer flex gap-3 items-start">
+                                <div class="w-8 h-8 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center shrink-0"><i data-lucide="calendar" class="w-4 h-4"></i></div>
+                                <div>
+                                    <p class="text-xs text-gray-800 leading-snug">Se te ha asignado la actividad <span class="font-bold">"Pruebas de latencia"</span>.</p>
+                                    <p class="text-[10px] text-gray-400 font-medium mt-1">Ayer, 16:30</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="relative">
+                    <button onclick="toggleDropdown('profile-menu')" class="w-8 h-8 bg-black rounded-full flex items-center justify-center text-white text-[10px] font-bold transition hover:scale-105">AM</button>
+                    <div id="profile-menu" class="apple-dropdown p-2 w-48 right-0">
+                        <div class="px-4 py-2 border-b border-gray-50 mb-1"><p class="text-[11px] font-bold">Adrian Monzón</p></div>
+                        <a href="perfil.html" class="flex items-center gap-2 px-3 py-2 text-xs font-medium hover:bg-gray-50 rounded-lg"><i data-lucide="user" class="w-3 h-3 text-gray-400"></i> Mi Perfil</a>
+                        <button onclick="logout()" class="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium text-red-500 hover:bg-red-50 rounded-lg"><i data-lucide="log-out" class="w-3 h-3 text-red-400"></i> Cerrar Sesión</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="p-6 lg:p-10 max-w-7xl mx-auto space-y-10">
+            
+            <section>
+                <h2 class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-4">Resumen de Proyecto</h2>
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+                    <div class="apple-card p-6 flex flex-col items-center justify-center col-span-2 lg:col-span-1">
+                        <div class="w-14 h-14 relative mb-2"><canvas id="mainProgressChart"></canvas><div class="absolute inset-0 flex items-center justify-center text-xs font-bold" id="mainProgressText">0%</div></div>
+                        <span class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Avance Global</span>
+                    </div>
+                    <div class="apple-card p-6 flex flex-col justify-center">
+                        <p class="text-[10px] text-green-500 font-bold uppercase tracking-widest mb-1">Completadas</p>
+                        <p class="text-4xl font-bold tracking-tight text-gray-900" id="kpiCompletadas">0</p>
+                    </div>
+                    <div class="apple-card p-6 flex flex-col justify-center">
+                        <p class="text-[10px] text-blue-500 font-bold uppercase tracking-widest mb-1">En proceso</p>
+                        <p class="text-4xl font-bold text-blue-600 tracking-tight" id="kpiProceso">0</p>
+                    </div>
+                    <div class="apple-card p-6 flex flex-col justify-center">
+                        <p class="text-[10px] text-rose-500 font-bold uppercase tracking-widest mb-1">En atraso</p>
+                        <p class="text-4xl font-bold text-rose-500 tracking-tight" id="kpiAtrasadas">0</p>
+                    </div>
+                </div>
+            </section>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div class="lg:col-span-5 space-y-6">
+                    <h2 class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">Hitos & Roadmap</h2>
+                    <div class="apple-card p-8">
+                        <div id="hitosRoot" class="space-y-6"></div>
+                    </div>
+                    <div class="card-dark p-6 shadow-xl" id="nextLaunchCard"></div>
+                </div>
+
+                <div class="lg:col-span-7 space-y-6">
+                    <h2 class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">Muro de Actualizaciones</h2>
+                    <div class="apple-card p-6">
+                        <div class="flex gap-4">
+                            <div class="w-8 h-8 bg-black rounded-full flex shrink-0 items-center justify-center font-bold text-white text-[10px]">AM</div>
+                            <div class="flex-1">
+                                <textarea id="postTxt" oninput="autoResize(this)" placeholder="Escribe un anuncio o menciona a alguien usando @nombre o @todos..." class="w-full text-sm outline-none resize-none bg-gray-50 hover:bg-gray-100 focus:bg-white focus:ring-1 focus:ring-gray-200 transition p-4 rounded-xl font-medium"></textarea>
+                                <div class="flex justify-end mt-3">
+                                    <button onclick="publish()" class="bg-black text-white px-8 py-2.5 rounded-full text-[11px] font-bold shadow-lg active:scale-95 transition">Publicar</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="feed" class="space-y-4"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+        function toggleMenu() { document.getElementById('sidebar').classList.toggle('active'); }
+        function autoResize(t) { t.style.height = 'auto'; t.style.height = t.scrollHeight + 'px'; }
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+        function toggleDropdown(id) {
+            document.querySelectorAll('.apple-dropdown').forEach(d => { if(d.id !== id) d.classList.remove('active'); });
+            document.getElementById(id).classList.toggle('active');
+        }
+        function logout() { window.location.href = 'login.html'; }
+
+        const TODAY = new Date(); TODAY.setHours(0,0,0,0);
+        function parseDate(dateStr) { if(!dateStr) return new Date(); const [y, m, d] = dateStr.split('-'); return new Date(y, m - 1, d); }
+        function formatDate(dateStr) { if(!dateStr) return '--'; const [y, m, d] = dateStr.split('-'); const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']; return `${d} ${months[parseInt(m)-1]}`; }
+
+        const hitosData = [
+            { id: 1, title: 'Arquitectura Cloud & Setup', targetDate: '2026-03-15', tasks: [{ end: '2026-02-12', status: 'completado' }, { end: '2026-02-15', status: 'completado' }, { end: '2026-02-25', status: 'proceso' }] },
+            { id: 2, title: 'Módulo de Autorizaciones v2', targetDate: '2026-04-10', tasks: [{ end: '2026-03-10', status: 'pendiente' }, { end: '2026-04-05', status: 'pendiente' }] }
+        ];
+
+        let totalTasks = 0, completedTasks = 0, inProcessTasks = 0, delayedTasks = 0, firstIncompleteHito = null;
+        const hitosHtml = hitosData.map(h => {
+            let hTotal = h.tasks.length, hCompleted = 0;
+            h.tasks.forEach(t => {
+                totalTasks++;
+                if (t.status === 'completado') { hCompleted++; completedTasks++; } 
+                else {
+                    if (t.status === 'proceso') inProcessTasks++;
+                    if (t.end) { const diffDays = Math.ceil((parseDate(t.end) - TODAY) / (1000 * 60 * 60 * 24)); if (diffDays < 0) delayedTasks++; }
+                }
+            });
+            let hProgress = hTotal === 0 ? 0 : Math.round((hCompleted / hTotal) * 100);
+            if (hProgress < 100 && !firstIncompleteHito) firstIncompleteHito = h;
+            return `<div class="space-y-2"><div class="flex justify-between items-end"><span class="text-sm font-bold text-gray-900">${h.title}</span><span class="text-[10px] font-black text-gray-400">${hProgress}%</span></div><div class="gantt-track"><div class="gantt-fill ${hProgress === 100 ? 'bg-green-500' : 'bg-black'}" style="width: ${hProgress}%"></div></div></div>`;
+        }).join('');
+
+        document.getElementById('hitosRoot').innerHTML = hitosHtml;
+        document.getElementById('kpiCompletadas').innerText = completedTasks;
+        document.getElementById('kpiProceso').innerText = inProcessTasks;
+        document.getElementById('kpiAtrasadas').innerText = delayedTasks;
+        
+        const totalProgress = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
+        document.getElementById('mainProgressText').innerText = totalProgress + '%';
+
+        new Chart(document.getElementById('mainProgressChart'), { type: 'doughnut', data: { datasets: [{ data: [totalProgress, 100 - totalProgress], backgroundColor: ['#000', '#F2F2F7'], borderWidth: 0 }] }, options: { cutout: '82%', plugins: { legend: { display: false }, tooltip: { enabled: false } }, responsive: true, maintainAspectRatio: true } });
+
+        const nextLaunchContainer = document.getElementById('nextLaunchCard');
+        if (firstIncompleteHito) {
+            nextLaunchContainer.innerHTML = `<div class="flex items-center gap-2 mb-2"><i data-lucide="zap" class="w-3.5 h-3.5 text-yellow-400"></i><p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Próximo Lanzamiento</p></div><h4 class="text-lg font-bold leading-tight">${firstIncompleteHito.title}</h4><div class="mt-4 pt-4 border-t border-gray-800"><span class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Fecha Estimada: <span class="text-white">${formatDate(firstIncompleteHito.targetDate)}</span></span></div>`;
+        } else {
+            nextLaunchContainer.innerHTML = `<div class="text-center py-4"><i data-lucide="check-circle" class="w-8 h-8 text-green-500 mx-auto mb-2"></i><p class="text-sm font-bold text-white">Todos los hitos completados 🎉</p></div>`;
+        }
+        lucide.createIcons();
+
+        // --- SISTEMA DE RECONOCIMIENTO DE MENCIONES (@usuario y @todos) ---
+        function parseMentions(text) {
+            return text.replace(/@(\w+)/g, (match, username) => {
+                if (username.toLowerCase() === 'todos') {
+                    return '<span class="mention-all">@todos</span>';
+                }
+                return `<span class="mention-tag">@${username}</span>`;
+            });
+        }
+
+        let currentTargetId = null; let currentType = null;
+        
+        function publish() {
+            const input = document.getElementById('postTxt');
+            if(!input.value.trim()) return;
+            
+            const formattedText = parseMentions(input.value);
+            const id = Date.now();
+            const html = `
+                <div id="post-${id}" class="apple-card p-6 animate-in fade-in zoom-in duration-300">
+                    <div class="flex justify-between items-start mb-4 relative">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 bg-black rounded-full text-white text-[10px] font-bold flex items-center justify-center">AM</div>
+                            <div>
+                                <span class="text-xs font-bold block">Adrian Monzón</span>
+                                <span class="text-[9px] text-gray-400 font-medium">Justo ahora</span>
+                            </div>
+                        </div>
+                        <div class="relative">
+                            <button onclick="toggleDropdown('m-${id}')" class="text-gray-400 hover:text-black p-1"><i data-lucide="more-horizontal" class="w-4 h-4"></i></button>
+                            <div id="m-${id}" class="apple-dropdown p-2 w-32 right-0">
+                                <button onclick="triggerEdit(${id}, 'post')" class="w-full text-left px-3 py-2 text-xs font-bold hover:bg-gray-50 rounded-lg">Editar</button>
+                                <button onclick="triggerDelete(${id}, 'post')" class="w-full text-left px-3 py-2 text-xs font-bold text-red-500 hover:bg-red-50 rounded-lg">Eliminar</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <p id="content-post-${id}" class="text-sm text-gray-700 font-medium leading-relaxed mb-4 whitespace-pre-wrap">${formattedText}</p>
+                    
+                    <div class="flex gap-5 pt-4 border-t border-gray-50">
+                        <button onclick="this.classList.toggle('text-red-500')" class="text-[10px] font-bold text-gray-400 hover:text-red-500 flex items-center gap-1.5 transition"><i data-lucide="heart" class="w-4 h-4"></i> Me gusta</button>
+                        <button onclick="document.getElementById('cs-${id}').classList.toggle('hidden')" class="text-[10px] font-bold text-gray-400 hover:text-blue-500 flex items-center gap-1.5 transition"><i data-lucide="message-circle" class="w-4 h-4"></i> Comentar</button>
+                    </div>
+                    <div id="cs-${id}" class="hidden mt-4 pt-4 border-t border-gray-50">
+                        <div id="list-${id}" class="space-y-3 mb-4"></div>
+                        <div class="flex gap-3">
+                            <input type="text" id="in-${id}" placeholder="Comenta o arroba usando @..." class="flex-1 bg-gray-50 px-4 py-2.5 rounded-xl text-xs outline-none focus:ring-1 focus:ring-gray-200">
+                            <button onclick="addComment(${id})" class="bg-black text-white p-2.5 rounded-xl hover:scale-105 transition"><i data-lucide="send" class="w-4 h-4"></i></button>
+                        </div>
+                    </div>
+                </div>`;
+            document.getElementById('feed').insertAdjacentHTML('afterbegin', html);
+            input.value = ''; input.style.height = '40px'; lucide.createIcons();
+        }
+
+        function addComment(pid) {
+            const input = document.getElementById(`in-${pid}`);
+            if(!input.value.trim()) return;
+            
+            const formattedComment = parseMentions(input.value);
+            const cid = Date.now();
+            
+            const html = `
+                <div id="comment-${cid}" class="flex flex-col bg-gray-50 p-4 rounded-xl relative group">
+                    <div class="flex justify-between items-start">
+                        <div class="flex gap-3">
+                            <div class="w-6 h-6 bg-black rounded-full shrink-0 flex items-center justify-center text-white text-[8px] font-bold">AM</div>
+                            <div>
+                                <span class="text-[10px] font-bold text-gray-900 block mb-0.5">Adrian Monzón</span>
+                                <p id="content-comment-${cid}" class="text-xs text-gray-700 font-medium pr-8">${formattedComment}</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition absolute right-2 top-2 bg-gray-50">
+                            <button onclick="triggerEdit(${cid}, 'comment')" class="text-gray-400 hover:text-blue-500 p-1.5 rounded-md hover:bg-white"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button>
+                            <button onclick="triggerDelete(${cid}, 'comment')" class="text-gray-400 hover:text-red-500 p-1.5 rounded-md hover:bg-white"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                        </div>
+                    </div>
+                </div>`;
+            document.getElementById(`list-${pid}`).insertAdjacentHTML('beforeend', html);
+            input.value = ''; lucide.createIcons();
+        }
+
+        function triggerEdit(id, type) {
+            currentTargetId = id; currentType = type;
+            const oldText = document.getElementById(`content-${type}-${id}`).textContent;
+            const editInput = document.getElementById('editModalInput');
+            editInput.value = oldText; openModal('editModal'); setTimeout(()=>autoResize(editInput),10);
+        }
+
+        function triggerDelete(id, type) { currentTargetId = id; currentType = type; openModal('deleteModal'); }
+
+        document.getElementById('saveEditBtn').onclick = () => {
+            const newText = document.getElementById('editModalInput').value;
+            if(newText.trim()) { 
+                document.getElementById(`content-${currentType}-${currentTargetId}`).innerHTML = parseMentions(newText); 
+                closeModal('editModal'); 
+            }
+        };
+
+        document.getElementById('confirmDeleteBtn').onclick = () => { document.getElementById(`${currentType}-${currentTargetId}`).remove(); closeModal('deleteModal'); };
+
+        document.addEventListener('click', (e) => { if (!e.target.closest('.relative')) document.querySelectorAll('.apple-dropdown').forEach(d => d.classList.remove('active')); });
+    </script>
+</body>
+</html>
