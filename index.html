@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MetaProject | Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --apple-bg: #F5F5F7; --apple-card: #FFFFFF; }
+        * { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+        body { background-color: var(--apple-bg); color: #1D1D1F; margin: 0; overflow-x: hidden; }
+
+        .sidebar { width: 260px; height: 100vh; position: fixed; background: rgba(255,255,255,0.8); backdrop-filter: saturate(180%) blur(20px); border-right: 1px solid rgba(0,0,0,0.08); z-index: 100; transform: translateX(-100%); transition: transform 0.3s ease; }
+        @media (min-width: 1024px) { .sidebar { transform: translateX(0); } .main-content { margin-left: 260px; } }
+        .sidebar.active { transform: translateX(0); }
+
+        .apple-card { background: var(--apple-card); border-radius: 24px; box-shadow: 0 4px 24px rgba(0,0,0,0.04); border: 1px solid transparent; }
+        .card-dark { background: #000000; color: #FFFFFF; border-radius: 24px; }
+        
+        .gantt-track { background: #E8E8ED; height: 6px; border-radius: 10px; overflow: hidden; }
+        .gantt-fill { background: #1D1D1F; height: 100%; border-radius: 10px; transition: width 1s ease; }
+
+        .apple-dropdown { position: absolute; top: 100%; right: 0; margin-top: 8px; background: rgba(255,255,255,0.98); backdrop-filter: blur(20px); border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.05); width: 280px; opacity: 0; visibility: hidden; transform: translateY(-10px); transition: all 0.2s ease; z-index: 200; }
+        .apple-dropdown.active { opacity: 1; visibility: visible; transform: translateY(0); }
+        
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 1200; padding: 20px; }
+        .modal-overlay.active { display: flex; }
+        .modal-content { background: white; width: 100%; max-width: 500px; border-radius: 28px; padding: 32px; position: relative; }
+        
+        .hidden { display: none !important; }
+        textarea { resize: none; overflow: hidden; min-height: 40px; }
+        
+        /* Estilos de Menciones */
+        .mention-tag { color: #007AFF; background: #E5F1FF; padding: 2px 6px; border-radius: 6px; font-weight: 700; font-size: 0.9em; }
+        .mention-all { color: #FF3B30; background: #FFF1F0; padding: 2px 6px; border-radius: 6px; font-weight: 700; font-size: 0.9em; }
+        
+        /* Scrollbar para dropdown de menciones */
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #E5E5EA; border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+    <div id="editModal" class="modal-overlay">
+        <div class="modal-content relative">
+            <button onclick="closeModal('editModal')" class="absolute top-6 right-6 text-gray-400 hover:text-black transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+            <h3 class="text-xl font-bold mb-6 tracking-tight">Editar publicación</h3>
+            <textarea id="editModalInput" oninput="autoResize(this)" class="w-full text-sm outline-none bg-gray-50 p-4 rounded-xl focus:ring-1 focus:ring-gray-200 mb-6 font-medium"></textarea>
+            <div class="flex justify-end gap-3">
+                <button onclick="closeModal('editModal')" class="px-6 py-2.5 rounded-full text-xs font-bold text-gray-400 hover:bg-gray-100 transition">Descartar</button>
+                <button id="saveEditBtn" class="bg-black text-white px-8 py-2.5 rounded-full text-xs font-bold shadow-lg active:scale-95 transition">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="deleteModal" class="modal-overlay">
+        <div class="modal-content max-w-xs text-center p-8 relative">
+            <button onclick="closeModal('deleteModal')" class="absolute top-4 right-4 text-gray-400 hover:text-black transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+            <div class="w-12 h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4"><i data-lucide="alert-triangle"></i></div>
+            <h3 class="text-lg font-bold mb-2">¿Estás seguro?</h3>
+            <p class="text-xs text-gray-500 mb-8 font-medium">Esta acción no se puede deshacer.</p>
+            <div class="flex flex-col gap-2">
+                <button id="confirmDeleteBtn" class="w-full bg-red-500 text-white py-3 rounded-xl text-xs font-bold active:scale-95 transition">Continuar</button>
+                <button onclick="closeModal('deleteModal')" class="w-full py-3 rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-100 transition">Descartar</button>
+            </div>
+        </div>
+    </div>
+
+    <aside id="sidebar" class="sidebar flex flex-col p-6">
+        <div class="flex justify-between items-center mb-10">
+            <a href="index.html" class="text-xl font-bold tracking-tight hover:opacity-70 transition">MetaProject</a>
+            <button onclick="toggleMenu()" class="lg:hidden text-gray-400"><i data-lucide="x"></i></button>
+        </div>
+        
+        <nav class="flex-1 space-y-1">
+            <a href="index.html" class="flex items-center gap-3 px-4 py-3 bg-black text-white rounded-xl font-semibold text-sm shadow-lg transition">
+                <i data-lucide="layout-grid" class="w-4 h-4"></i> Dashboard
+            </a>
+            <a href="requerimientos.html" class="flex items-center gap-3 px-4 py-3 text-gray-500 hover:bg-gray-50 rounded-xl transition text-sm">
+                <i data-lucide="layers" class="w-4 h-4"></i> Requerimientos
+            </a>
+            <a href="plan_trabajo.html" class="flex items-center gap-3 px-4 py-3 text-gray-500 hover:bg-gray-50 rounded-xl transition text-sm">
+                <i data-lucide="calendar" class="w-4 h-4"></i> Plan de Trabajo
+            </a>
+            <a href="presupuesto.html" class="flex items-center gap-3 px-4 py-3 text-gray-500 hover:bg-gray-50 rounded-xl transition text-sm">
+                <i data-lucide="dollar-sign" class="w-4 h-4"></i> Presupuesto
+            </a>
+            <a href="administracion.html" id="menu-admin" class="flex items-center gap-3 px-4 py-3 text-gray-500 hover:bg-gray-50 rounded-xl transition text-sm hidden">
+                <i data-lucide="shield" class="w-4 h-4"></i> Administración
+            </a>
+        </nav>
+
+        <div class="mt-auto pt-6 border-t border-gray-100">
+            <p class="text-[9px] text-gray-400 font-bold uppercase tracking-widest text-center leading-relaxed">Todos los derechos reservados<br>AMG ©️ 2026</p>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="h-16 px-6 lg:px-10 flex items-center justify-between sticky top-0 bg-white/80 backdrop-blur-md z-50 border-b border-gray-100">
+            <button onclick="toggleMenu()" class="lg:hidden text-gray-500"><i data-lucide="menu"></i></button>
+            
+            <div class="flex items-center gap-4 ml-auto relative">
+                
+                <div class="relative">
+                    <button onclick="toggleDropdown('notif-menu')" class="text-gray-400 hover:text-black transition p-2 relative">
+                        <i data-lucide="bell" class="w-5 h-5"></i>
+                        <span id="notif-dot" class="absolute top-1 right-1.5 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full animate-pulse hidden"></span>
+                    </button>
+                    <div id="notif-menu" class="apple-dropdown right-0 max-h-96 flex flex-col">
+                        <div class="px-4 py-3 border-b border-gray-50 flex justify-between items-center sticky top-0 bg-white/90 backdrop-blur-md z-10 rounded-t-xl">
+                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Actividad Reciente</span>
+                        </div>
+                        <div id="notif-list" class="overflow-y-auto"></div>
+                    </div>
+                </div>
+
+                <div class="relative">
+                    <button onclick="toggleDropdown('profile-menu')" class="w-8 h-8 bg-black rounded-full flex items-center justify-center text-white text-[10px] font-bold transition hover:scale-105" id="userAvatar">--</button>
+                    <div id="profile-menu" class="apple-dropdown p-2 w-48 right-0">
+                        <div class="px-4 py-2 border-b border-gray-50 mb-1">
+                            <p class="text-[11px] font-bold" id="userNameDisplay">...</p>
+                            <p class="text-[9px] text-gray-400 font-black uppercase" id="userRoleDisplay">...</p>
+                        </div>
+                        <a href="perfil.html" class="flex items-center gap-2 px-3 py-2 text-xs font-medium hover:bg-gray-50 rounded-lg"><i data-lucide="user" class="w-3 h-3 text-gray-400"></i> Mi Perfil</a>
+                        <button onclick="logout()" class="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium text-red-500 hover:bg-red-50 rounded-lg"><i data-lucide="log-out" class="w-3 h-3 text-red-400"></i> Cerrar Sesión</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="p-6 lg:p-10 max-w-7xl mx-auto space-y-10">
+            
+            <section>
+                <h2 class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-4">Resumen de Proyecto</h2>
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+                    <div class="apple-card p-6 flex flex-col items-center justify-center col-span-2 lg:col-span-1">
+                        <div class="w-14 h-14 relative mb-2"><canvas id="mainProgressChart"></canvas><div class="absolute inset-0 flex items-center justify-center text-xs font-bold" id="mainProgressText">0%</div></div>
+                        <span class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Avance Global</span>
+                    </div>
+                    <div class="apple-card p-6 flex flex-col justify-center">
+                        <p class="text-[10px] text-green-500 font-bold uppercase tracking-widest mb-1">Completadas</p>
+                        <p class="text-4xl font-bold tracking-tight text-gray-900" id="kpiCompletadas">0</p>
+                    </div>
+                    <div class="apple-card p-6 flex flex-col justify-center">
+                        <p class="text-[10px] text-blue-500 font-bold uppercase tracking-widest mb-1">En proceso</p>
+                        <p class="text-4xl font-bold text-blue-600 tracking-tight" id="kpiProceso">0</p>
+                    </div>
+                    <div class="apple-card p-6 flex flex-col justify-center">
+                        <p class="text-[10px] text-rose-500 font-bold uppercase tracking-widest mb-1">En atraso</p>
+                        <p class="text-4xl font-bold text-rose-500 tracking-tight" id="kpiAtrasadas">0</p>
+                    </div>
+                </div>
+            </section>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div class="lg:col-span-5 space-y-6">
+                    <h2 class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">Hitos & Roadmap</h2>
+                    <div class="apple-card p-8">
+                        <div id="hitosRoot" class="space-y-6"><p class="text-xs text-gray-400">Cargando...</p></div>
+                    </div>
+                    <div class="card-dark p-6 shadow-xl" id="nextLaunchCard"></div>
+                </div>
+
+                <div class="lg:col-span-7 space-y-6">
+                    <h2 class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">Muro de Actualizaciones</h2>
+                    <div class="apple-card p-6">
+                        <div class="flex gap-4">
+                            <div class="w-8 h-8 bg-black rounded-full flex shrink-0 items-center justify-center font-bold text-white text-[10px]" id="postAvatar">--</div>
+                            <div class="flex-1 relative">
+                                <textarea id="postTxt" oninput="autoResize(this); checkMention(this, 'mention-box-post')" placeholder="Escribe un anuncio o menciona a alguien usando @nombre o @todos..." class="w-full text-sm outline-none resize-none bg-gray-50 hover:bg-gray-100 focus:bg-white focus:ring-1 focus:ring-gray-200 transition p-4 rounded-xl font-medium"></textarea>
+                                <div id="mention-box-post" class="absolute top-full left-0 mt-2 bg-white rounded-xl shadow-2xl border border-gray-100 w-full max-w-[250px] max-h-48 overflow-y-auto custom-scroll z-50 hidden"></div>
+                                <div class="flex justify-end mt-3">
+                                    <button onclick="publish()" id="publishBtn" class="bg-black text-white px-8 py-2.5 rounded-full text-[11px] font-bold shadow-lg active:scale-95 transition">Publicar</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="feed" class="space-y-4"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // CONEXIÓN A SUPABASE
+        const supabaseUrl = 'https://tvdkwqbagiccatqrillg.supabase.co';
+        const supabaseKey = 'sb_publishable_N9RM5G0ySNDSohmjI49Maw_HwOPq-b2';
+        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        let currentUser = null;
+        let currentTargetId = null; 
+        let currentType = null; 
+        let chart = null;
+        
+        // Arreglo para guardar a los usuarios y usarlos en el autocompletado
+        let mentionUsers = [{ display: 'Todos', tag: 'todos' }];
+
+        // UI Helpers
+        lucide.createIcons();
+        function toggleMenu() { document.getElementById('sidebar').classList.toggle('active'); }
+        function autoResize(t) { t.style.height = 'auto'; t.style.height = t.scrollHeight + 'px'; }
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+        function toggleDropdown(id) {
+            document.querySelectorAll('.apple-dropdown').forEach(d => { if(d.id !== id) d.classList.remove('active'); });
+            document.getElementById(id).classList.toggle('active');
+        }
+        async function logout() { await _supabase.auth.signOut(); window.location.href = 'login.html'; }
+
+        // SISTEMA DE AUTOCOMPLETADO Y MENCIONES
+        function parseMentions(text) {
+            return text.replace(/@([a-zA-Z0-9_áéíóúÁÉÍÓÚñÑ]+)/g, (match, username) => {
+                if (username.toLowerCase() === 'todos') return '<span class="mention-all">@todos</span>';
+                return `<span class="mention-tag">${match}</span>`;
+            });
+        }
+        
+        // Detecta el arroba y abre el menú flotante
+        function checkMention(inputEl, boxId) {
+            const box = document.getElementById(boxId);
+            const cursorPosition = inputEl.selectionStart;
+            const textUpToCursor = inputEl.value.substring(0, cursorPosition);
+            
+            // Busca si la última palabra empieza con @
+            const match = textUpToCursor.match(/@([a-zA-Z0-9_áéíóúÁÉÍÓÚñÑ]*)$/);
+
+            if (match) {
+                const searchStr = match[1].toLowerCase();
+                
+                // Filtra usuarios que coincidan con lo que vas escribiendo
+                const filtered = mentionUsers.filter(u => 
+                    u.display.toLowerCase().includes(searchStr) || 
+                    u.tag.toLowerCase().includes(searchStr)
+                );
+
+                if (filtered.length > 0) {
+                    box.innerHTML = filtered.map(u => {
+                        const initials = u.display === 'Todos' ? 'ALL' : u.display.substring(0,2).toUpperCase();
+                        return `
+                        <div class="px-4 py-3 text-xs font-bold text-gray-800 hover:bg-gray-50 cursor-pointer border-b border-gray-50 last:border-0 flex items-center gap-3 transition"
+                              onclick="insertMention('${inputEl.id}', '${boxId}', '${u.tag}', ${match.index}, ${cursorPosition})">
+                            <div class="w-7 h-7 rounded-full bg-black text-white text-[9px] flex items-center justify-center shrink-0 shadow-md">${initials}</div>
+                            ${u.display}
+                        </div>`;
+                    }).join('');
+                    box.classList.remove('hidden');
+                } else {
+                    box.classList.add('hidden');
+                }
+            } else {
+                box.classList.add('hidden');
+            }
+        }
+
+        // Inserta el usuario elegido y cierra el menú flotante
+        function insertMention(inputId, boxId, tag, startIndex, endIndex) {
+            const inputEl = document.getElementById(inputId);
+            const text = inputEl.value;
+            const mentionText = '@' + tag + ' '; // Agrega el tag y un espacio
+            
+            inputEl.value = text.substring(0, startIndex) + mentionText + text.substring(endIndex);
+            inputEl.focus();
+            document.getElementById(boxId).classList.add('hidden');
+            autoResize(inputEl);
+        }
+
+        function formatDate(dateStr) { 
+            if(!dateStr) return '--'; 
+            const [y, m, d] = dateStr.split('-'); 
+            const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']; 
+            return `${d} ${months[parseInt(m)-1]}`; 
+        }
+
+        // INICIALIZACIÓN
+        async function init() {
+            const { data: { user } } = await _supabase.auth.getUser();
+            if(!user) { window.location.href='login.html'; return; }
+            currentUser = user;
+
+            const { data: profile } = await _supabase.from('profiles').select('*').eq('id', user.id).single();
+            if(profile) {
+                const initials = profile.full_name.substring(0,2).toUpperCase();
+                document.getElementById('userAvatar').innerText = initials;
+                document.getElementById('postAvatar').innerText = initials;
+                document.getElementById('userNameDisplay').innerText = profile.full_name;
+                document.getElementById('userRoleDisplay').innerText = profile.role;
+                if(profile.role === 'Administrador') document.getElementById('menu-admin').classList.remove('hidden');
+            }
+
+            // Cargar perfiles para el autocompletado
+            const { data: allProfiles } = await _supabase.from('profiles').select('full_name');
+            if (allProfiles) {
+                mentionUsers = [
+                    { display: 'Todos', tag: 'todos' },
+                    // Formateamos quitando espacios para la etiqueta (@AdrianMonzon) pero mostrando el nombre real
+                    ...allProfiles.map(p => ({ display: p.full_name, tag: p.full_name.replace(/\s+/g, '') }))
+                ];
+            }
+
+            loadStats();
+            loadMilestones();
+            loadPosts();
+        }
+
+        // CARGAR KPIS
+        async function loadStats() {
+            const { data: tasks } = await _supabase.from('tasks').select('*');
+            if(!tasks) return;
+            const done = tasks.filter(t => t.status === 'completado').length;
+            const proc = tasks.filter(t => t.status === 'proceso').length;
+            const late = tasks.filter(t => t.status !== 'completado' && new Date(t.end_date) < new Date()).length;
+            const total = tasks.length || 1;
+            const perc = Math.round((done / total) * 100);
+
+            document.getElementById('kpiCompletadas').innerText = done;
+            document.getElementById('kpiProceso').innerText = proc;
+            document.getElementById('kpiAtrasadas').innerText = late;
+            document.getElementById('mainProgressText').innerText = perc + '%';
+
+            if(chart) chart.destroy();
+            chart = new Chart(document.getElementById('mainProgressChart'), { 
+                type: 'doughnut', 
+                data: { datasets: [{ data: [perc, 100 - perc], backgroundColor: ['#000', '#F2F2F7'], borderWidth: 0 }] }, 
+                options: { cutout: '82%', plugins: { legend: { display: false }, tooltip: { enabled: false } }, responsive: true, maintainAspectRatio: true } 
+            });
+        }
+
+        // CARGAR HITOS
+        async function loadMilestones() {
+            const { data: ms } = await _supabase.from('milestones').select('*').order('target_date', {ascending: true});
+            const root = document.getElementById('hitosRoot');
+            const next = document.getElementById('nextLaunchCard');
+            
+            if(!ms || ms.length === 0) {
+                root.innerHTML = '<p class="text-xs text-gray-400">No hay hitos activos.</p>';
+                return;
+            }
+
+            root.innerHTML = ms.map(h => `
+                <div class="space-y-2">
+                    <div class="flex justify-between items-end"><span class="text-sm font-bold text-gray-900">${h.title}</span><span class="text-[10px] font-black text-gray-400">${h.progress}%</span></div>
+                    <div class="gantt-track"><div class="gantt-fill ${h.progress === 100 ? 'bg-green-500' : 'bg-black'}" style="width: ${h.progress}%"></div></div>
+                </div>`).join('');
+
+            const pending = ms.find(h => h.progress < 100);
+            if (pending) {
+                next.innerHTML = `<div class="flex items-center gap-2 mb-2"><i data-lucide="zap" class="w-3.5 h-3.5 text-yellow-400"></i><p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Próximo Lanzamiento</p></div><h4 class="text-lg font-bold leading-tight">${pending.title}</h4><div class="mt-4 pt-4 border-t border-gray-800"><span class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Fecha Estimada: <span class="text-white">${formatDate(pending.target_date)}</span></span></div>`;
+            } else {
+                next.innerHTML = `<div class="text-center py-4"><i data-lucide="check-circle" class="w-8 h-8 text-green-500 mx-auto mb-2"></i><p class="text-sm font-bold text-white">Todos los hitos completados 🎉</p></div>`;
+            }
+            lucide.createIcons();
+        }
+
+        // CARGAR POSTS Y COMENTARIOS
+        async function loadPosts() {
+            const { data: posts } = await _supabase
+                .from('posts')
+                .select('*, profiles(full_name), comments(*, profiles(full_name))')
+                .order('created_at', {ascending: false});
+            
+            const feed = document.getElementById('feed');
+            const notif = document.getElementById('notif-list');
+
+            if(!posts) return;
+
+            feed.innerHTML = posts.map(p => {
+                const isOwner = p.user_id === currentUser.id;
+                const initials = p.profiles.full_name.substring(0,2).toUpperCase();
+                
+                const commentsHtml = p.comments.sort((a,b) => new Date(a.created_at) - new Date(b.created_at)).map(c => {
+                    const cIsOwner = c.user_id === currentUser.id;
+                    const cInitials = c.profiles.full_name.substring(0,2).toUpperCase();
+                    return `
+                    <div id="comment-${c.id}" class="flex flex-col bg-gray-50 p-4 rounded-xl relative group mt-3">
+                        <div class="flex justify-between items-start">
+                            <div class="flex gap-3">
+                                <div class="w-6 h-6 bg-black rounded-full shrink-0 flex items-center justify-center text-white text-[8px] font-bold">${cInitials}</div>
+                                <div>
+                                    <span class="text-[10px] font-bold text-gray-900 block mb-0.5">${c.profiles.full_name}</span>
+                                    <p id="content-comment-${c.id}" class="text-xs text-gray-700 font-medium pr-8 whitespace-pre-wrap" data-raw="${c.content.replace(/"/g, '&quot;')}">${parseMentions(c.content)}</p>
+                                </div>
+                            </div>
+                            ${cIsOwner ? `
+                            <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition absolute right-2 top-2 bg-gray-50">
+                                <button onclick="triggerEdit('${c.id}', 'comment')" class="text-gray-400 hover:text-blue-500 p-1.5 rounded-md hover:bg-white"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button>
+                                <button onclick="triggerDelete('${c.id}', 'comment')" class="text-gray-400 hover:text-red-500 p-1.5 rounded-md hover:bg-white"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                            </div>` : ''}
+                        </div>
+                    </div>`;
+                }).join('');
+
+                return `
+                <div id="post-${p.id}" class="apple-card p-6 animate-in fade-in zoom-in duration-300">
+                    <div class="flex justify-between items-start mb-4 relative">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 bg-black rounded-full text-white text-[10px] font-bold flex items-center justify-center">${initials}</div>
+                            <div>
+                                <span class="text-xs font-bold block">${p.profiles.full_name}</span>
+                                <span class="text-[9px] text-gray-400 font-medium">${new Date(p.created_at).toLocaleString()}</span>
+                            </div>
+                        </div>
+                        ${isOwner ? `
+                        <div class="relative">
+                            <button onclick="toggleDropdown('m-${p.id}')" class="text-gray-400 hover:text-black p-1"><i data-lucide="more-horizontal" class="w-4 h-4"></i></button>
+                            <div id="m-${p.id}" class="apple-dropdown p-2 w-32 right-0">
+                                <button onclick="triggerEdit('${p.id}', 'post')" class="w-full text-left px-3 py-2 text-xs font-bold hover:bg-gray-50 rounded-lg">Editar</button>
+                                <button onclick="triggerDelete('${p.id}', 'post')" class="w-full text-left px-3 py-2 text-xs font-bold text-red-500 hover:bg-red-50 rounded-lg">Eliminar</button>
+                            </div>
+                        </div>` : ''}
+                    </div>
+                    
+                    <p id="content-post-${p.id}" class="text-sm text-gray-700 font-medium leading-relaxed mb-4 whitespace-pre-wrap" data-raw="${p.content.replace(/"/g, '&quot;')}">${parseMentions(p.content)}</p>
+                    
+                    <div class="flex gap-5 pt-4 border-t border-gray-50">
+                        <button onclick="this.classList.toggle('text-red-500')" class="text-[10px] font-bold text-gray-400 hover:text-red-500 flex items-center gap-1.5 transition"><i data-lucide="heart" class="w-4 h-4"></i> Me gusta</button>
+                        <button onclick="document.getElementById('cs-${p.id}').classList.toggle('hidden')" class="text-[10px] font-bold text-gray-400 hover:text-blue-500 flex items-center gap-1.5 transition"><i data-lucide="message-circle" class="w-4 h-4"></i> Comentar (${p.comments.length})</button>
+                    </div>
+                    <div id="cs-${p.id}" class="hidden mt-4 pt-4 border-t border-gray-50">
+                        <div id="list-${p.id}" class="mb-4">${commentsHtml}</div>
+                        
+                        <div class="flex gap-3 relative w-full">
+                            <input type="text" id="in-${p.id}" oninput="checkMention(this, 'mention-box-${p.id}')" placeholder="Comenta o arroba usando @..." class="flex-1 bg-gray-50 px-4 py-2.5 rounded-xl text-xs outline-none focus:ring-1 focus:ring-gray-200">
+                            <div id="mention-box-${p.id}" class="absolute bottom-full left-0 mb-2 bg-white rounded-xl shadow-2xl border border-gray-100 w-full max-w-[250px] max-h-48 overflow-y-auto custom-scroll z-50 hidden"></div>
+                            <button onclick="addComment('${p.id}')" class="bg-black text-white p-2.5 rounded-xl hover:scale-105 transition"><i data-lucide="send" class="w-4 h-4"></i></button>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+
+            notif.innerHTML = posts.slice(0,4).map(p => `
+                <div class="p-4 border-b border-gray-50 hover:bg-gray-50 transition cursor-pointer flex gap-3 items-start relative">
+                    <div class="w-8 h-8 rounded-full bg-black text-white text-[9px] font-bold flex items-center justify-center shrink-0">${p.profiles.full_name.substring(0,2).toUpperCase()}</div>
+                    <div>
+                        <p class="text-xs text-gray-800 leading-snug"><span class="font-bold">${p.profiles.full_name}</span> publicó en el muro.</p>
+                        <p class="text-[10px] text-gray-400 font-medium mt-1">${new Date(p.created_at).toLocaleTimeString()}</p>
+                    </div>
+                </div>`).join('');
+            
+            if(posts.length > 0) document.getElementById('notif-dot').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        async function publish() {
+            const input = document.getElementById('postTxt');
+            const txt = input.value.trim();
+            if(!txt) return;
+            const btn = document.getElementById('publishBtn');
+            btn.disabled = true; btn.innerText = "...";
+            
+            await _supabase.from('posts').insert([{ user_id: currentUser.id, content: txt }]);
+            
+            input.value = ''; input.style.height = '40px'; 
+            document.getElementById('mention-box-post').classList.add('hidden'); // Esconder caja por si acaso
+            btn.disabled = false; btn.innerText = "Publicar";
+            loadPosts();
+        }
+
+        async function addComment(postId) {
+            const input = document.getElementById(`in-${postId}`);
+            const txt = input.value.trim();
+            if(!txt) return;
+            await _supabase.from('comments').insert([{ post_id: postId, user_id: currentUser.id, content: txt }]);
+            document.getElementById(`mention-box-${postId}`).classList.add('hidden');
+            loadPosts(); 
+        }
+
+        // ACCIONES: EDITAR Y BORRAR
+        function triggerEdit(id, type) {
+            currentTargetId = id; currentType = type;
+            const oldText = document.getElementById(`content-${type}-${id}`).getAttribute('data-raw');
+            const editInput = document.getElementById('editModalInput');
+            editInput.value = oldText; 
+            openModal('editModal'); 
+            setTimeout(() => autoResize(editInput), 10);
+            document.querySelectorAll('.apple-dropdown').forEach(d => d.classList.remove('active'));
+        }
+
+        document.getElementById('saveEditBtn').onclick = async () => {
+            const newText = document.getElementById('editModalInput').value.trim();
+            if(newText) {
+                const table = currentType === 'post' ? 'posts' : 'comments';
+                const { error } = await _supabase.from(table).update({ content: newText }).eq('id', currentTargetId);
+                
+                if (error) {
+                    alert("No se pudo editar: Verifica los permisos RLS en Supabase.");
+                } else {
+                    closeModal('editModal');
+                    loadPosts();
+                }
+            }
+        };
+
+        function triggerDelete(id, type) { 
+            currentTargetId = id; currentType = type; 
+            openModal('deleteModal'); 
+            document.querySelectorAll('.apple-dropdown').forEach(d => d.classList.remove('active'));
+        }
+
+        document.getElementById('confirmDeleteBtn').onclick = async () => { 
+            const table = currentType === 'post' ? 'posts' : 'comments';
+            const { error } = await _supabase.from(table).delete().eq('id', currentTargetId);
+            
+            if (error) {
+                alert("No se pudo eliminar: Verifica los permisos RLS en Supabase.");
+            } else {
+                closeModal('deleteModal');
+                loadPosts();
+            }
+        };
+
+        // Cerrar dropdowns y autocompletados al hacer clic fuera
+        document.addEventListener('click', (e) => { 
+            if (!e.target.closest('.relative')) {
+                document.querySelectorAll('.apple-dropdown').forEach(d => d.classList.remove('active')); 
+                document.querySelectorAll('.mention-dropdown').forEach(d => d.classList.add('hidden')); 
+            }
+        });
+
+        init();
+    </script>
+</body>
+</html>
