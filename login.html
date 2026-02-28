@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MetaProject | Acceso</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --apple-bg: #F5F5F7; --apple-card: #FFFFFF; }
+        * { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+        body { background-color: var(--apple-bg); color: #1D1D1F; margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+
+        .apple-card { background: var(--apple-card); border-radius: 32px; box-shadow: 0 20px 60px rgba(0,0,0,0.05); border: 1px solid rgba(255,255,255,0.5); position: relative; z-index: 10; }
+        
+        .input-apple { width: 100%; background: #F5F5F7; padding: 16px 20px 16px 44px; border-radius: 16px; border: 2px solid transparent; outline: none; font-size: 14px; font-weight: 500; transition: all 0.2s ease; }
+        .input-apple:focus { background: #FFFFFF; border-color: #E5E5EA; box-shadow: 0 4px 12px rgba(0,0,0,0.02); }
+        
+        .form-view { display: none; opacity: 0; transition: opacity 0.4s ease; }
+        .form-view.active { display: block; opacity: 1; animation: fadeIn 0.4s ease forwards; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .toggle-btn { position: relative; display: flex; background: #F5F5F7; border-radius: 100px; padding: 4px; margin-bottom: 32px; }
+        .toggle-option { flex: 1; text-align: center; padding: 10px 0; font-size: 12px; font-weight: 700; color: #8E8E93; cursor: pointer; z-index: 10; transition: color 0.3s ease; }
+        .toggle-option.active { color: #1D1D1F; }
+        .toggle-pill { position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc(50% - 4px); background: #FFFFFF; border-radius: 100px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 1; }
+        [data-state="register"] .toggle-pill { transform: translateX(100%); }
+
+        /* Elementos decorativos */
+        .bg-blob { position: absolute; border-radius: 50%; filter: blur(60px); opacity: 0.6; z-index: 1; animation: float 10s infinite ease-in-out alternate; }
+        .blob-1 { width: 300px; height: 300px; background: #E5F1FF; top: -100px; right: -100px; animation-delay: 0s; }
+        .blob-2 { width: 250px; height: 250px; background: #F3E8FF; bottom: -50px; left: -100px; animation-delay: -5s; }
+        @keyframes float { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(20px, -20px) scale(1.05); } }
+
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 1200; padding: 20px; }
+        .modal-overlay.active { display: flex; }
+        .modal-content { background: white; width: 100%; max-width: 400px; border-radius: 28px; padding: 32px; position: relative; max-height: 90vh; }
+        .modal-content.wide { max-width: 600px; display: flex; flex-direction: column; padding: 0; }
+        .custom-scroll::-webkit-scrollbar { width: 6px; } .custom-scroll::-webkit-scrollbar-thumb { background: #E5E5EA; border-radius: 10px; }
+    </style>
+</head>
+<body class="p-6">
+
+    <div class="bg-blob blob-1"></div>
+    <div class="bg-blob blob-2"></div>
+
+    <div id="forgotModal" class="modal-overlay">
+        <div class="modal-content relative">
+            <button onclick="closeModal('forgotModal')" class="absolute top-6 right-6 text-gray-400 hover:text-black transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+            <div class="w-12 h-12 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mb-4"><i data-lucide="key" class="w-6 h-6"></i></div>
+            <h3 class="text-xl font-bold mb-2 tracking-tight">Recuperar acceso</h3>
+            <p class="text-xs text-gray-500 mb-6 font-medium leading-relaxed">Ingresa tu correo electrónico registrado y te enviaremos un enlace seguro para restablecer tu contraseña.</p>
+            <div class="space-y-4">
+                <div class="relative">
+                    <i data-lucide="mail" class="w-4 h-4 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2"></i>
+                    <input type="email" id="recoveryEmail" placeholder="tu@correo.com" class="input-apple pl-11">
+                </div>
+            </div>
+            <button onclick="realRecovery(this)" class="w-full bg-black text-white py-3.5 rounded-xl text-sm font-bold shadow-lg shadow-black/20 hover:scale-[1.02] active:scale-95 transition-all mt-6 flex items-center justify-center gap-2">
+                Enviar instrucciones
+            </button>
+        </div>
+    </div>
+
+    <div id="privacyModal" class="modal-overlay">
+        <div class="modal-content wide relative overflow-hidden">
+            <div class="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-white sticky top-0 z-10">
+                <h3 class="text-lg font-bold tracking-tight text-gray-900">Aviso de Privacidad</h3>
+                <button onclick="closeModal('privacyModal')" class="text-gray-400 hover:text-black transition p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="p-6 md:p-8 overflow-y-auto custom-scroll text-sm text-gray-600 leading-relaxed space-y-6">
+                <p>En <strong>AMG</strong>, creador de <strong>MetaProject</strong>, estamos comprometidos con la protección de tu información. El presente Aviso de Privacidad regula la recopilación y uso de los datos en nuestra plataforma.</p>
+                <div><h4 class="font-bold text-gray-900 mb-2">1. Información que recopilamos</h4><p>Para crear y gestionar tu cuenta, recopilamos: Nombre completo, correo electrónico, rol dentro del sistema y registros de actividad (logs de hora, IP y acciones realizadas en la plataforma).</p></div>
+                <div><h4 class="font-bold text-gray-900 mb-2">2. Finalidad del uso de datos</h4><p>Tus datos son utilizados exclusivamente para: <br>• Creación, autenticación y seguridad de tu perfil.<br>• Asignación de tareas, hitos y notificaciones en el sistema.<br>• Trazabilidad y auditoría de cambios (Logs) requeridos por los administradores del entorno.</p></div>
+                <div><h4 class="font-bold text-gray-900 mb-2">3. Protección y Almacenamiento</h4><p>Tus credenciales y datos están cifrados bajo altos estándares de seguridad. AMG no vende, alquila ni transfiere tus datos personales a terceros bajo ninguna circunstancia, salvo mandamiento legal.</p></div>
+                <div><h4 class="font-bold text-gray-900 mb-2">4. Derechos ARCO</h4><p>Tienes derecho a solicitar el Acceso, Rectificación, Cancelación u Oposición del uso de tus datos en cualquier momento. Para ejercerlos, contacta directamente al Administrador de tu instancia de MetaProject.</p></div>
+                <p class="text-xs text-gray-400 mt-4 border-t border-gray-100 pt-4">Última actualización: Febrero de 2026.</p>
+            </div>
+            <div class="p-5 border-t border-gray-100 bg-gray-50 flex justify-end">
+                <button onclick="closeModal('privacyModal')" class="bg-black text-white px-8 py-2.5 rounded-full text-xs font-bold transition active:scale-95 shadow-md">He leído y entendido</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="apple-card w-full max-w-md p-8 md:p-10">
+        
+        <div class="text-center mb-8">
+            <div class="w-12 h-12 bg-black text-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <i data-lucide="layers" class="w-6 h-6"></i>
+            </div>
+            <h1 class="text-2xl font-black tracking-tight">MetaProject</h1>
+        </div>
+
+        <div class="toggle-btn" id="formToggle" data-state="login">
+            <div class="toggle-pill"></div>
+            <div class="toggle-option active" onclick="switchForm('login')">Iniciar Sesión</div>
+            <div class="toggle-option" onclick="switchForm('register')">Registrarse</div>
+        </div>
+
+        <div id="loginView" class="form-view active">
+            <div class="space-y-5">
+                <div>
+                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2 block mb-2">Correo Electrónico</label>
+                    <div class="relative">
+                        <i data-lucide="mail" class="w-4 h-4 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2"></i>
+                        <input type="email" id="loginEmail" placeholder="tu@correo.com" class="input-apple pl-11">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2 flex justify-between items-end mb-2">
+                        <span>Contraseña</span>
+                        <button type="button" onclick="openModal('forgotModal')" class="text-[9px] text-blue-500 hover:text-blue-700 font-bold hover:underline capitalize normal-case tracking-normal transition">¿Olvidaste tu contraseña?</button>
+                    </label>
+                    <div class="relative">
+                        <i data-lucide="lock" class="w-4 h-4 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2"></i>
+                        <input type="password" id="loginPassword" placeholder="••••••••" class="input-apple pl-11">
+                    </div>
+                </div>
+            </div>
+            
+            <button onclick="realLogin(this)" class="w-full bg-black text-white py-4 rounded-xl text-sm font-bold shadow-lg shadow-black/20 hover:scale-[1.02] active:scale-95 transition-all mt-8 flex items-center justify-center gap-2">
+                Acceder <i data-lucide="arrow-right" class="w-4 h-4"></i>
+            </button>
+        </div>
+
+        <div id="registerView" class="form-view">
+            <div class="space-y-4">
+                <div>
+                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2 block mb-2">Nombre Completo</label>
+                    <div class="relative">
+                        <i data-lucide="user" class="w-4 h-4 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2"></i>
+                        <input type="text" id="regName" placeholder="Ej. Adrian Monzón" class="input-apple pl-11">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2 block mb-2">Correo Electrónico</label>
+                    <div class="relative">
+                        <i data-lucide="mail" class="w-4 h-4 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2"></i>
+                        <input type="email" id="regEmail" placeholder="tu@correo.com" class="input-apple pl-11">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2 block mb-2">Contraseña</label>
+                    <div class="relative">
+                        <i data-lucide="lock" class="w-4 h-4 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2"></i>
+                        <input type="password" id="regPassword" placeholder="Mínimo 6 caracteres" class="input-apple pl-11">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-6 flex items-start gap-3 bg-blue-50/50 p-4 rounded-xl border border-blue-100">
+                <i data-lucide="shield-alert" class="w-5 h-5 text-blue-500 shrink-0 mt-0.5"></i>
+                <p class="text-[10px] text-gray-600 font-medium leading-relaxed">
+                    Al registrarte, tu cuenta quedará en estado <span class="font-bold text-gray-900">Pendiente</span>. Un Administrador deberá aprobar tu acceso al sistema.
+                </p>
+            </div>
+
+            <button onclick="realRegister(this)" class="w-full bg-black text-white py-4 rounded-xl text-sm font-bold shadow-lg shadow-black/20 hover:scale-[1.02] active:scale-95 transition-all mt-6 flex items-center justify-center gap-2">
+                Solicitar Acceso
+            </button>
+        </div>
+
+        <div class="mt-8 pt-6 border-t border-gray-100 flex flex-col items-center gap-3">
+            <p class="text-[9px] text-gray-400 font-bold uppercase tracking-widest text-center leading-relaxed">Todos los derechos reservados<br>AMG ©️ 2026</p>
+            <button onclick="openModal('privacyModal')" class="text-[10px] text-blue-500 font-bold hover:text-blue-700 hover:underline transition">Ver Aviso de Privacidad</button>
+        </div>
+
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // -------------------------------------------------------------
+        // CONEXIÓN A SUPABASE
+        // -------------------------------------------------------------
+        const supabaseUrl = 'https://tvdkwqbagiccatqrillg.supabase.co';
+        const supabaseKey = 'sb_publishable_N9RM5G0ySNDSohmjI49Maw_HwOPq-b2';
+        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        // Control de Modales
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+        // Cambio entre Formulario de Login y Registro
+        function switchForm(state) {
+            const toggle = document.getElementById('formToggle');
+            const loginView = document.getElementById('loginView');
+            const registerView = document.getElementById('registerView');
+            const options = document.querySelectorAll('.toggle-option');
+
+            toggle.setAttribute('data-state', state);
+            options.forEach(opt => opt.classList.remove('active'));
+            event.target.classList.add('active');
+
+            if (state === 'login') {
+                registerView.classList.remove('active');
+                setTimeout(() => { registerView.style.display = 'none'; loginView.style.display = 'block'; setTimeout(() => loginView.classList.add('active'), 10); }, 200); 
+            } else {
+                loginView.classList.remove('active');
+                setTimeout(() => { loginView.style.display = 'none'; registerView.style.display = 'block'; setTimeout(() => registerView.classList.add('active'), 10); }, 200);
+            }
+        }
+
+        // ==========================================
+        // FUNCIONES REALES DE BASE DE DATOS
+        // ==========================================
+
+        // 1. REGISTRAR USUARIO REAL (CON CONFIRMACIÓN DE CORREO)
+        async function realRegister(btn) {
+            const name = document.getElementById('regName').value;
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+
+            if(!name || !email || !password) return alert("Por favor completa todos los campos.");
+            if(password.length < 6) return alert("La contraseña debe tener al menos 6 caracteres.");
+
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Conectando...`;
+            lucide.createIcons();
+            btn.disabled = true;
+
+            // Llamada a Supabase
+            const { data, error } = await _supabase.auth.signUp({
+                email: email,
+                password: password,
+                options: { data: { full_name: name } }
+            });
+
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+
+            if (error) {
+                alert(`Error: ${error.message}`);
+            } else {
+                // Mensaje pidiendo confirmación
+                alert("¡Casi listo! Te hemos enviado un correo de confirmación. Por favor, revisa tu bandeja de entrada (y la carpeta de Spam) y haz clic en el enlace para activar tu cuenta.");
+                
+                switchForm('login');
+                document.getElementById('loginEmail').value = email; 
+                
+                // Limpiar campos
+                document.getElementById('regName').value = '';
+                document.getElementById('regEmail').value = '';
+                document.getElementById('regPassword').value = '';
+            }
+        }
+
+        // 2. INICIAR SESIÓN REAL
+        async function realLogin(btn) {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            if(!email || !password) return alert("Por favor ingresa correo y contraseña.");
+
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Autenticando...`;
+            lucide.createIcons();
+            btn.disabled = true;
+
+            // Llamada a Supabase
+            const { data, error } = await _supabase.auth.signInWithPassword({
+                email: email,
+                password: password
+            });
+
+            if (error) {
+                alert(`Error al iniciar sesión: ${error.message}`);
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            } else {
+                // ¡Éxito! Redirigir al dashboard
+                window.location.href = 'index.html';
+            }
+        }
+
+        // 3. RECUPERAR CONTRASEÑA REAL
+        async function realRecovery(btn) {
+            const email = document.getElementById('recoveryEmail').value;
+            if(!email) return alert("Ingresa tu correo primero.");
+
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Procesando...`;
+            lucide.createIcons();
+            btn.disabled = true;
+
+            const { data, error } = await _supabase.auth.resetPasswordForEmail(email);
+
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+
+            if (error) {
+                alert(`Error: ${error.message}`);
+            } else {
+                alert(`Te hemos enviado un enlace de recuperación a: ${email}`);
+                document.getElementById('recoveryEmail').value = '';
+                closeModal('forgotModal');
+            }
+        }
+    </script>
+</body>
+</html>
