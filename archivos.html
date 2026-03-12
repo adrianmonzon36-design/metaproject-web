@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MetaProject | Repositorio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --apple-bg: #F5F5F7; --apple-card: #FFFFFF; }
+        * { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+        body { background-color: var(--apple-bg); color: #1D1D1F; margin: 0; overflow-x: hidden; }
+
+        .apple-card { background: var(--apple-card); border-radius: 20px; box-shadow: 0 4px 24px rgba(0,0,0,0.04); border: 1px solid transparent; transition: all 0.3s ease; }
+        
+        /* Colores de Carpetas */
+        .folder-blue { background: #EBF5FF; color: #007AFF; }
+        .folder-red { background: #FFF1F0; color: #FF3B30; }
+        .folder-green { background: #E3F9E5; color: #1DB446; }
+        .folder-purple { background: #F4E8FF; color: #AF52DE; }
+        .folder-yellow { background: #FFFBE6; color: #FAAD14; }
+        .folder-gray { background: #F5F5F7; color: #8E8E93; }
+        .folder-dark { background: #1D1D1F; color: #FFFFFF; }
+
+        /* Iconos de Archivos */
+        .ext-pdf { background: #FFF1F0; color: #FF3B30; border: 1px solid #FFA39E; }
+        .ext-xls, .ext-xlsx, .ext-csv { background: #E3F9E5; color: #1DB446; border: 1px solid #B7EB8F; }
+        .ext-doc, .ext-docx { background: #E6F4FF; color: #1677FF; border: 1px solid #91CAFF; }
+        .ext-jpg, .ext-jpeg, .ext-png { background: #F9F0FF; color: #722ED1; border: 1px solid #D3ADF7; }
+        .ext-default { background: #F5F5F7; color: #8E8E93; border: 1px solid #D1D1D6; }
+
+        .dropzone { border: 2px dashed #D1D1D6; background: #F5F5F7; transition: all 0.3s ease; }
+        .dropzone.dragover { border-color: #007AFF; background: #E5F1FF; }
+
+        .color-selector { width: 32px; height: 32px; border-radius: 50%; cursor: pointer; transition: transform 0.2s; border: 2px solid transparent; }
+        .color-selector:hover { transform: scale(1.1); }
+        .color-selector.selected { border-color: #000; transform: scale(1.1); }
+    </style>
+</head>
+<body>
+
+    <script src="core.js"></script>
+
+    <div id="folderModal" class="modal-overlay">
+        <div class="modal-content relative">
+            <button onclick="closeModal('folderModal')" class="absolute top-6 right-6 text-gray-400 hover:text-black transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+            <h2 id="folderModalTitle" class="text-2xl font-bold mb-6 tracking-tight">Nueva Carpeta</h2>
+            
+            <div class="space-y-5">
+                <div>
+                    <label class="text-[10px] font-bold text-gray-400 uppercase ml-1 tracking-widest">Nombre de la Carpeta</label>
+                    <input type="text" id="fFolderName" placeholder="Ej: Documentos Legales" class="w-full bg-gray-50 p-4 rounded-xl border-none outline-none focus:ring-1 focus:ring-gray-200 mt-1 text-sm font-bold">
+                </div>
+
+                <div>
+                    <label class="text-[10px] font-bold text-gray-400 uppercase ml-1 tracking-widest block mb-2">Color del Icono</label>
+                    <div class="flex gap-3">
+                        <div class="color-selector bg-blue-500 selected" onclick="selectColor('blue', this)"></div>
+                        <div class="color-selector bg-red-500" onclick="selectColor('red', this)"></div>
+                        <div class="color-selector bg-green-500" onclick="selectColor('green', this)"></div>
+                        <div class="color-selector bg-purple-500" onclick="selectColor('purple', this)"></div>
+                        <div class="color-selector bg-yellow-400" onclick="selectColor('yellow', this)"></div>
+                        <div class="color-selector bg-gray-400" onclick="selectColor('gray', this)"></div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-[10px] font-bold text-gray-400 uppercase ml-1 tracking-widest">Nivel de Acceso</label>
+                    <select id="fFolderAccess" class="w-full bg-gray-50 p-4 rounded-xl border-none outline-none focus:ring-1 focus:ring-gray-200 mt-1 text-sm font-bold cursor-pointer text-gray-900">
+                        <option value="Todos">Público (Todo el equipo)</option>
+                        <option value="Solo Administradores">Privado (Solo Administradores)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 mt-8">
+                <button onclick="closeModal('folderModal')" class="px-6 py-2 rounded-full text-xs font-bold text-gray-400 hover:bg-gray-50 transition">Cancelar</button>
+                <button onclick="saveFolder()" class="bg-black text-white px-8 py-2.5 rounded-full text-xs font-bold shadow-lg transition active:scale-95">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="deleteFolderModal" class="modal-overlay">
+        <div class="modal-content max-w-xs text-center p-8">
+            <button onclick="closeModal('deleteFolderModal')" class="absolute top-4 right-4 text-gray-400 hover:text-black"><i data-lucide="x" class="w-5 h-5"></i></button>
+            <div class="w-12 h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4"><i data-lucide="alert-triangle"></i></div>
+            <h3 class="text-lg font-bold mb-2">¿Eliminar carpeta?</h3>
+            <p class="text-xs text-gray-500 mb-8 font-medium">Se perderán todos los archivos que contenga. Esta acción es irreversible.</p>
+            <div class="flex flex-col gap-2">
+                <button onclick="confirmDeleteFolder()" class="w-full bg-red-500 text-white py-3 rounded-xl text-xs font-bold active:scale-95 transition">Eliminar permanentemente</button>
+                <button onclick="closeModal('deleteFolderModal')" class="w-full py-3 rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-100 transition">Descartar</button>
+            </div>
+        </div>
+    </div>
+
+    <main class="main-content">
+        <div class="p-6 lg:p-10 max-w-7xl mx-auto">
+            
+            <div id="rootView" class="block animate-in fade-in duration-300">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-10">
+                    <div>
+                        <h2 class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-2">Base de Conocimiento</h2>
+                        <h1 class="text-3xl font-bold tracking-tight">Repositorio Global</h1>
+                    </div>
+                    <button onclick="openFolderModal(null)" class="w-full md:w-auto justify-center bg-black text-white px-6 py-3 rounded-full text-xs font-bold shadow-xl flex items-center gap-2 transition active:scale-95">
+                        <i data-lucide="folder-plus" class="w-4 h-4"></i> Nueva Carpeta
+                    </button>
+                </div>
+
+                <div id="foldersGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <p class="text-xs text-gray-400 animate-pulse col-span-full">Cargando repositorio...</p>
+                </div>
+            </div>
+
+            <div id="folderView" class="hidden animate-in fade-in zoom-in-95 duration-300">
+                
+                <div class="flex items-center gap-2 mb-8 text-sm font-bold text-gray-400">
+                    <button onclick="goRoot()" class="hover:text-black flex items-center gap-1 transition"><i data-lucide="folder" class="w-4 h-4"></i> Repositorio</button>
+                    <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                    <span id="currentFolderName" class="text-black">Nombre Carpeta</span>
+                </div>
+
+                <div id="uploadSection" class="mb-10">
+                    <div id="fileDropzone" class="dropzone rounded-2xl p-8 text-center cursor-pointer relative overflow-hidden group" onclick="document.getElementById('fileInput').click()">
+                        <input type="file" id="fileInput" class="hidden" multiple onchange="uploadFilesToFolder(Array.from(this.files))">
+                        <div class="relative z-10 group-hover:scale-105 transition">
+                            <i data-lucide="upload-cloud" class="w-10 h-10 text-blue-500 mx-auto mb-3"></i>
+                            <p class="text-sm text-gray-800 font-bold mb-1">Haz clic o arrastra archivos a esta carpeta</p>
+                            <p class="text-[10px] text-gray-400 uppercase tracking-widest">PDF, Excel, JPG, DOC (Max. 10MB)</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-end mb-6">
+                    <h3 class="text-sm font-bold tracking-tight text-gray-900 flex items-center gap-2">Documentos <span id="filesCountBadge" class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-[10px]">0</span></h3>
+                    
+                    <div class="w-64 relative">
+                        <i data-lucide="filter" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        <input type="text" id="fileSearch" onkeyup="filterFiles()" placeholder="Buscar archivo..." class="w-full bg-white border border-gray-200 pl-9 pr-4 py-2 rounded-full text-xs font-medium outline-none focus:border-black transition shadow-sm">
+                    </div>
+                </div>
+
+                <div id="filesGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        let foldersData = [];
+        let systemFiles = []; // Archivos que vienen de requerimientos
+        let activeFolder = null; // null = Root, 'system' = Requerimientos, 'UUID' = Custom
+        let currentFolderFiles = [];
+        let targetDeleteFolderId = null;
+
+        let editFolderId = null;
+        let selectedColor = 'blue';
+
+        // --- ARRANQUE ---
+        async function runRepositorio() {
+            const isLogged = await initCore(); 
+            if(isLogged) {
+                lucide.createIcons();
+                fetchFolders();
+            }
+        }
+
+        // --- CARGA DE DATOS ---
+        async function fetchFolders() {
+            // 1. Cargar Carpetas Personalizadas
+            const { data: fData } = await _supabase.from('repository_folders').select('*').order('created_at', { ascending: false });
+            foldersData = fData || [];
+
+            // 2. Cargar Archivos de Requerimientos (Carpeta del Sistema)
+            const { data: rData } = await _supabase.from('requirements').select('id, title, files').not('files', 'is', null);
+            systemFiles = [];
+            if(rData) {
+                rData.forEach(req => {
+                    if(req.files && Array.isArray(req.files)) {
+                        req.files.forEach(f => systemFiles.push({ name: f.name, url: f.url, path: f.path, reqTitle: req.title }));
+                    }
+                });
+            }
+
+            renderRoot();
+        }
+
+        // --- NAVEGACIÓN ---
+        function goRoot() {
+            activeFolder = null;
+            document.getElementById('folderView').classList.add('hidden');
+            document.getElementById('rootView').classList.remove('hidden');
+            fetchFolders(); // Refrescar por si hubo cambios
+        }
+
+        function openFolderContent(id, name, type) {
+            activeFolder = id;
+            document.getElementById('currentFolderName').innerText = name;
+            document.getElementById('fileSearch').value = '';
+            
+            document.getElementById('rootView').classList.add('hidden');
+            document.getElementById('folderView').classList.remove('hidden');
+
+            if(type === 'system') {
+                document.getElementById('uploadSection').classList.add('hidden'); // No se puede subir directo a la de requerimientos desde aquí
+                currentFolderFiles = systemFiles;
+            } else {
+                document.getElementById('uploadSection').classList.remove('hidden');
+                const folder = foldersData.find(f => f.id === id);
+                currentFolderFiles = folder ? (folder.files || []) : [];
+                setupDragAndDrop();
+            }
+
+            renderFiles(currentFolderFiles);
+        }
+
+        // --- RENDER CARPETAS (ROOT) ---
+        function renderRoot() {
+            const grid = document.getElementById('foldersGrid');
+            
+            // 1. Dibujar Carpeta del Sistema siempre primero
+            let html = `
+            <div class="apple-card p-6 cursor-pointer hover:scale-[1.02] hover:shadow-lg transition group border border-gray-100 flex flex-col justify-between" onclick="openFolderContent('system', 'Archivos de Requerimientos', 'system')">
+                <div>
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="w-14 h-14 rounded-2xl folder-dark flex items-center justify-center shadow-md group-hover:rotate-3 transition">
+                            <i data-lucide="layers" class="w-7 h-7"></i>
+                        </div>
+                        <span class="text-[9px] font-black uppercase tracking-widest text-gray-500 bg-gray-100 px-2 py-1 rounded border border-gray-200">Sistema</span>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900 tracking-tight leading-tight">Archivos de Requerimientos</h3>
+                    <p class="text-xs text-gray-500 font-medium mt-1">Todos los documentos adjuntos en el módulo de requerimientos.</p>
+                </div>
+                <div class="mt-6 pt-4 border-t border-gray-50 flex justify-between items-center text-xs font-bold text-gray-400">
+                    <span class="flex items-center gap-1.5"><i data-lucide="file" class="w-3.5 h-3.5"></i> ${systemFiles.length} archivos</span>
+                    <i data-lucide="arrow-right" class="w-4 h-4 group-hover:text-black transition"></i>
+                </div>
+            </div>`;
+
+            // 2. Dibujar Carpetas Personalizadas
+            foldersData.forEach(f => {
+                const isRestricted = f.access_level === 'Solo Administradores' && userRole !== 'Administrador';
+                const fileCount = f.files ? f.files.length : 0;
+                
+                if (isRestricted) {
+                    // Vista Bloqueada
+                    html += `
+                    <div class="apple-card p-6 bg-gray-50/50 border border-gray-100 opacity-70 flex flex-col justify-between cursor-not-allowed" title="No tienes permisos para ver esta carpeta">
+                        <div>
+                            <div class="flex justify-between items-start mb-4">
+                                <div class="w-14 h-14 rounded-2xl bg-gray-200 text-gray-400 flex items-center justify-center shadow-inner">
+                                    <i data-lucide="lock" class="w-6 h-6"></i>
+                                </div>
+                                <span class="text-[9px] font-black uppercase tracking-widest text-red-500 bg-red-50 px-2 py-1 rounded border border-red-100">Privada</span>
+                            </div>
+                            <h3 class="text-lg font-bold text-gray-500 tracking-tight leading-tight">${f.name}</h3>
+                        </div>
+                    </div>`;
+                } else {
+                    // Vista Accesible
+                    const canEdit = userRole === 'Administrador' || f.created_by === currentUser.id;
+                    
+                    html += `
+                    <div class="apple-card p-6 hover:scale-[1.02] hover:shadow-lg transition group border border-gray-100 flex flex-col justify-between relative">
+                        ${canEdit ? `
+                        <div class="absolute top-4 right-4 z-10">
+                            <button onclick="toggleDropdown('drop-folder-${f.id}'); event.stopPropagation();" class="text-gray-400 hover:text-black p-1.5 rounded-lg hover:bg-gray-50 transition"><i data-lucide="more-vertical" class="w-5 h-5"></i></button>
+                            <div id="drop-folder-${f.id}" class="apple-dropdown p-2 right-0">
+                                <button onclick="openFolderModal('${f.id}'); event.stopPropagation();" class="w-full text-left px-3 py-2 text-xs font-bold hover:bg-gray-50 rounded-lg">Editar Carpeta</button>
+                                <button onclick="promptDeleteFolder('${f.id}'); event.stopPropagation();" class="w-full text-left px-3 py-2 text-xs font-bold text-red-500 hover:bg-red-50 rounded-lg">Eliminar</button>
+                            </div>
+                        </div>` : ''}
+
+                        <div class="cursor-pointer h-full flex flex-col" onclick="openFolderContent('${f.id}', '${f.name}', 'custom')">
+                            <div class="mb-4">
+                                <div class="w-14 h-14 rounded-2xl folder-${f.color} flex items-center justify-center shadow-md group-hover:rotate-3 transition">
+                                    <i data-lucide="folder" class="w-7 h-7"></i>
+                                </div>
+                            </div>
+                            <h3 class="text-lg font-bold text-gray-900 tracking-tight leading-tight pr-8">${f.name}</h3>
+                            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">${f.access_level}</p>
+                            
+                            <div class="mt-auto pt-6 border-t border-gray-50 flex justify-between items-center text-xs font-bold text-gray-400">
+                                <span class="flex items-center gap-1.5"><i data-lucide="file" class="w-3.5 h-3.5"></i> ${fileCount} archivos</span>
+                                <i data-lucide="arrow-right" class="w-4 h-4 group-hover:text-black transition transform group-hover:translate-x-1"></i>
+                            </div>
+                        </div>
+                    </div>`;
+                }
+            });
+
+            grid.innerHTML = html;
+            lucide.createIcons();
+        }
+
+        // --- GESTIÓN DE CARPETAS ---
+        function selectColor(color, el) {
+            selectedColor = color;
+            document.querySelectorAll('.color-selector').forEach(c => c.classList.remove('selected'));
+            el.classList.add('selected');
+        }
+
+        function openFolderModal(id) {
+            document.querySelectorAll('.apple-dropdown').forEach(d => d.classList.remove('active'));
+            editFolderId = id;
+            if(id) {
+                const f = foldersData.find(x => x.id === id);
+                document.getElementById('folderModalTitle').innerText = "Editar Carpeta";
+                document.getElementById('fFolderName').value = f.name;
+                document.getElementById('fFolderAccess').value = f.access_level;
+                // Simular click en el color correcto
+                const colorSelectors = document.querySelectorAll('.color-selector');
+                colorSelectors.forEach(el => {
+                    if(el.classList.contains(`bg-${f.color}-500`) || el.classList.contains(`bg-${f.color}-400`)) {
+                        el.click();
+                    }
+                });
+            } else {
+                document.getElementById('folderModalTitle').innerText = "Nueva Carpeta";
+                document.getElementById('fFolderName').value = '';
+                document.getElementById('fFolderAccess').value = 'Todos';
+                document.querySelector('.color-selector.bg-blue-500').click();
+            }
+            openModal('folderModal');
+        }
+
+        async function saveFolder() {
+            const name = document.getElementById('fFolderName').value.trim();
+            const access = document.getElementById('fFolderAccess').value;
+            if(!name) return showAlert("Faltan datos", "El nombre es obligatorio", "info");
+
+            const payload = { name, color: selectedColor, access_level: access };
+
+            if(editFolderId) {
+                await _supabase.from('repository_folders').update(payload).eq('id', editFolderId);
+                await logActivity(`Actualizó la carpeta "${name}"`, 'plan');
+            } else {
+                payload.created_by = currentUser.id;
+                await _supabase.from('repository_folders').insert([payload]);
+                await logActivity(`Creó la carpeta "${name}"`, 'plan');
+            }
+
+            closeModal('folderModal');
+            fetchFolders();
+        }
+
+        function promptDeleteFolder(id) {
+            targetDeleteFolderId = id;
+            document.querySelectorAll('.apple-dropdown').forEach(d => d.classList.remove('active'));
+            openModal('deleteFolderModal');
+        }
+
+        async function confirmDeleteFolder() {
+            if(!targetDeleteFolderId) return;
+            const f = foldersData.find(x => x.id === targetDeleteFolderId);
+            
+            // Si tiene archivos, idealmente hay que borrarlos del bucket también (cleanup)
+            if(f && f.files && f.files.length > 0) {
+                const paths = f.files.map(file => file.path);
+                await _supabase.storage.from('repositorio_global').remove(paths);
+            }
+
+            await _supabase.from('repository_folders').delete().eq('id', targetDeleteFolderId);
+            await logActivity(`Eliminó la carpeta "${f ? f.name : 'desconocida'}"`, 'plan');
+            
+            closeModal('deleteFolderModal');
+            fetchFolders();
+        }
+
+        // --- RENDER DE ARCHIVOS DENTRO DE CARPETA ---
+        function getFileIconAndColor(filename) {
+            const ext = filename.split('.').pop().toLowerCase();
+            let icon = 'file-text'; let colorClass = 'ext-default';
+            if(['pdf'].includes(ext)) { icon = 'file-text'; colorClass = 'ext-pdf'; }
+            else if(['xls', 'xlsx', 'csv'].includes(ext)) { icon = 'file-spreadsheet'; colorClass = 'ext-xls'; }
+            else if(['doc', 'docx'].includes(ext)) { icon = 'file'; colorClass = 'ext-doc'; }
+            else if(['jpg', 'jpeg', 'png'].includes(ext)) { icon = 'image'; colorClass = 'ext-jpg'; }
+            return { icon, colorClass, ext };
+        }
+
+        function renderFiles(filesToRender) {
+            const container = document.getElementById('filesGrid');
+            document.getElementById('filesCountBadge').innerText = filesToRender.length;
+            
+            if(filesToRender.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full py-20 flex flex-col items-center justify-center text-center">
+                        <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-4"><i data-lucide="folder-search" class="w-8 h-8 text-gray-300"></i></div>
+                        <h3 class="text-lg font-bold text-gray-900 mb-1">Carpeta Vacía</h3>
+                        <p class="text-sm text-gray-500 font-medium">No hay documentos aquí todavía.</p>
+                    </div>`;
+                lucide.createIcons(); return;
+            }
+
+            container.innerHTML = filesToRender.map((f, index) => {
+                const { icon, colorClass, ext } = getFileIconAndColor(f.name);
+                const isCustom = activeFolder !== 'system';
+                // Si es custom y soy admin o el creador, puedo borrar archivos
+                const canDelete = isCustom && (userRole === 'Administrador' || foldersData.find(folder=>folder.id===activeFolder)?.created_by === currentUser.id);
+
+                return `
+                <div class="apple-card p-5 relative group flex flex-col hover:border-gray-200">
+                    
+                    ${canDelete ? `
+                    <button onclick="deleteFileFromFolder(${index})" class="absolute top-4 right-4 text-gray-400 hover:text-red-500 bg-white p-1.5 rounded-lg shadow-sm opacity-0 group-hover:opacity-100 transition z-20">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>` : ''}
+
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="w-12 h-12 rounded-2xl flex items-center justify-center ${colorClass} shadow-sm"><i data-lucide="${icon}" class="w-6 h-6"></i></div>
+                        <span class="text-[9px] font-black uppercase tracking-widest text-gray-400 bg-gray-50 px-2 py-1 rounded-md border border-gray-100">${ext}</span>
+                    </div>
+                    
+                    <h3 class="font-bold text-sm text-gray-900 leading-snug mb-2 truncate" title="${f.name}">${f.name}</h3>
+                    
+                    ${f.reqTitle ? `
+                    <div class="mt-auto pt-4 border-t border-gray-50">
+                        <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Origen:</p>
+                        <p class="text-xs text-gray-600 font-medium truncate flex items-center gap-1.5" title="${f.reqTitle}"><i data-lucide="layers" class="w-3 h-3 text-gray-400"></i> ${f.reqTitle}</p>
+                    </div>` : ''}
+
+                    <a href="${f.url}" target="_blank" download class="absolute inset-0 bg-black/80 backdrop-blur-sm rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 text-white font-bold text-xs z-10">
+                        <i data-lucide="download-cloud" class="w-5 h-5"></i> Descargar
+                    </a>
+                </div>`;
+            }).join('');
+            
+            lucide.createIcons();
+        }
+
+        function filterFiles() {
+            const query = document.getElementById('fileSearch').value.toLowerCase();
+            const filtered = currentFolderFiles.filter(f => f.name.toLowerCase().includes(query) || (f.reqTitle && f.reqTitle.toLowerCase().includes(query)));
+            renderFiles(filtered);
+        }
+
+        // --- SUBIDA DE ARCHIVOS A CARPETA ---
+        function setupDragAndDrop() {
+            const dropzone = document.getElementById('fileDropzone'); if(!dropzone) return;
+            dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('dragover'); });
+            dropzone.addEventListener('dragleave', (e) => { e.preventDefault(); dropzone.classList.remove('dragover'); });
+            dropzone.addEventListener('drop', (e) => { e.preventDefault(); dropzone.classList.remove('dragover'); if(e.dataTransfer.files && e.dataTransfer.files.length > 0) { uploadFilesToFolder(Array.from(e.dataTransfer.files)); } });
+        }
+
+        async function uploadFilesToFolder(files) {
+            if(activeFolder === 'system' || !activeFolder) return;
+
+            // UI Cargando
+            const dropzone = document.getElementById('fileDropzone');
+            const originalHTML = dropzone.innerHTML;
+            dropzone.innerHTML = `<div class="flex flex-col items-center justify-center py-4"><i data-lucide="loader-2" class="w-8 h-8 text-blue-500 animate-spin mb-2"></i><p class="text-sm font-bold text-gray-800">Subiendo archivos...</p></div>`;
+            lucide.createIcons();
+
+            let newFiles = [];
+            for(let f of files) {
+                if(f.size > 10 * 1024 * 1024) { showAlert("Archivo muy grande", `El archivo ${f.name} supera los 10MB.`, "info"); continue; }
+                const fileExt = f.name.split('.').pop(); 
+                const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`; 
+                const filePath = `${activeFolder}/${fileName}`; // Guardar dentro de la subcarpeta del bucket
+                
+                const { error } = await _supabase.storage.from('repositorio_global').upload(filePath, f);
+                
+                if(error) { showAlert("Error", error.message, "error"); } 
+                else { 
+                    const { data: urlData } = _supabase.storage.from('repositorio_global').getPublicUrl(filePath); 
+                    newFiles.push({ name: f.name, url: urlData.publicUrl, path: filePath }); 
+                }
+            }
+
+            if(newFiles.length > 0) {
+                currentFolderFiles = [...currentFolderFiles, ...newFiles];
+                // Actualizar DB
+                await _supabase.from('repository_folders').update({ files: currentFolderFiles }).eq('id', activeFolder);
+                renderFiles(currentFolderFiles);
+                await logActivity(`Subió documentos al repositorio`, 'plan');
+            }
+
+            dropzone.innerHTML = originalHTML; // Restaurar dragzone
+            lucide.createIcons();
+        }
+
+        async function deleteFileFromFolder(index) {
+            if(activeFolder === 'system' || !activeFolder) return;
+            if(!confirm("¿Eliminar este archivo permanentemente?")) return;
+
+            const fileToDelete = currentFolderFiles[index];
+            
+            // 1. Eliminar del Bucket
+            await _supabase.storage.from('repositorio_global').remove([fileToDelete.path]);
+            
+            // 2. Eliminar de la DB
+            currentFolderFiles.splice(index, 1);
+            await _supabase.from('repository_folders').update({ files: currentFolderFiles }).eq('id', activeFolder);
+            
+            renderFiles(currentFolderFiles);
+        }
+
+        runRepositorio();
+    </script>
+</body>
+</html>
