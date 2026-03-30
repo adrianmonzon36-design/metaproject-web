@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gesolva | Dashboard Analítico</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --apple-bg: #F5F5F7; --apple-card: #FFFFFF; }
+        * { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+        body { background-color: var(--apple-bg); color: #1D1D1F; margin: 0; overflow-x: hidden; }
+
+        .apple-card { background: var(--apple-card); border-radius: 24px; box-shadow: 0 4px 24px rgba(0,0,0,0.04); border: 1px solid transparent; transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .apple-card:hover { box-shadow: 0 10px 40px rgba(0,0,0,0.08); transform: translateY(-2px); }
+
+        .stat-value { font-size: 2.5rem; font-weight: 900; letter-spacing: -0.05em; line-height: 1; }
+        
+        .risk-item { border-left: 4px solid transparent; }
+        .risk-high { border-left-color: #FF3B30; background: #FFF1F0; }
+        .risk-medium { border-left-color: #FAAD14; background: #FFFBE6; }
+
+        /* Scrollbar suave para el radar de riesgos */
+        .radar-container::-webkit-scrollbar { width: 6px; }
+        .radar-container::-webkit-scrollbar-thumb { background: #E5E5EA; border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+    <script src="core.js"></script>
+
+    <main class="main-content">
+        <div class="p-6 lg:p-10 max-w-7xl mx-auto">
+            
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-10">
+                <div>
+                    <h2 class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-2">Centro de Comando</h2>
+                    <h1 class="text-3xl font-bold tracking-tight text-gray-900">Hola, <span id="dashUserName">...</span> 👋</h1>
+                    <p class="text-sm text-gray-500 font-medium mt-1">Este es el estado de salud de los proyectos en Gesolva.</p>
+                </div>
+                <div class="bg-white px-4 py-2.5 rounded-xl shadow-sm border border-gray-100 flex items-center gap-3">
+                    <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                    <span class="text-xs font-bold text-gray-700">Sistema Actualizado</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
+                <div class="apple-card p-6 flex flex-col justify-center">
+                    <div class="flex justify-between items-start mb-2">
+                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Total Actividades</p>
+                        <i data-lucide="layers" class="w-4 h-4 text-gray-300"></i>
+                    </div>
+                    <p class="stat-value text-gray-900" id="kpiTotal">0</p>
+                </div>
+                <div class="apple-card p-6 flex flex-col justify-center">
+                    <div class="flex justify-between items-start mb-2">
+                        <p class="text-[10px] font-bold text-green-500 uppercase tracking-widest">Completadas</p>
+                        <i data-lucide="check-circle-2" class="w-4 h-4 text-green-300"></i>
+                    </div>
+                    <p class="stat-value text-green-600" id="kpiDone">0</p>
+                </div>
+                <div class="apple-card p-6 flex flex-col justify-center">
+                    <div class="flex justify-between items-start mb-2">
+                        <p class="text-[10px] font-bold text-blue-500 uppercase tracking-widest">En Proceso</p>
+                        <i data-lucide="clock" class="w-4 h-4 text-blue-300"></i>
+                    </div>
+                    <p class="stat-value text-blue-600" id="kpiProgress">0</p>
+                </div>
+                <div class="apple-card p-6 flex flex-col justify-center bg-gray-900 text-white hover:bg-black">
+                    <div class="flex justify-between items-start mb-2">
+                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Productividad</p>
+                        <i data-lucide="trending-up" class="w-4 h-4 text-gray-500"></i>
+                    </div>
+                    <p class="stat-value text-white" id="kpiRate">0%</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                <div class="lg:col-span-2 apple-card p-6 md:p-8">
+                    <div class="mb-6 pb-4 border-b border-gray-50 flex justify-between items-end">
+                        <div>
+                            <h3 class="text-lg font-bold tracking-tight text-gray-900">Mapa de Carga de Trabajo</h3>
+                            <p class="text-xs text-gray-500 font-medium mt-1">Actividades pendientes asignadas por persona.</p>
+                        </div>
+                        <i data-lucide="users" class="w-5 h-5 text-gray-300"></i>
+                    </div>
+                    <div class="relative h-64 w-full">
+                        <canvas id="workloadChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="apple-card p-0 flex flex-col overflow-hidden">
+                    <div class="p-6 md:p-8 bg-red-50/50 border-b border-red-100">
+                        <div class="flex items-center gap-3 mb-2">
+                            <div class="w-8 h-8 rounded-full bg-red-100 text-red-500 flex items-center justify-center shadow-sm">
+                                <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                            </div>
+                            <h3 class="text-lg font-bold tracking-tight text-red-600">Radar de Riesgos</h3>
+                        </div>
+                        <p class="text-xs text-red-400 font-medium">Actividades atrasadas o próximas a vencer.</p>
+                    </div>
+                    
+                    <div class="flex-1 overflow-y-auto radar-container p-4 space-y-3 max-h-[300px]" id="risksContainer">
+                        <p class="text-xs text-gray-400 text-center py-10 font-medium animate-pulse">Analizando fechas...</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let workloadChartInstance = null;
+
+        async function runDashboard() {
+            const isLogged = await initCore(); 
+            if(isLogged) {
+                document.getElementById('dashUserName').innerText = currentUserName.split(' ')[0];
+                lucide.createIcons();
+                fetchDashboardData();
+            }
+        }
+
+        async function fetchDashboardData() {
+            // Traemos todas las tareas de la base de datos
+            const { data: tasks, error } = await _supabase.from('tasks').select('*');
+            
+            if (error) {
+                console.error(error);
+                return;
+            }
+
+            const allTasks = tasks || [];
+            
+            calculateKPIs(allTasks);
+            renderWorkloadChart(allTasks);
+            renderRiskRadar(allTasks);
+        }
+
+        function calculateKPIs(tasks) {
+            const total = tasks.length;
+            const completadas = tasks.filter(t => t.status === 'completado').length;
+            const enProceso = tasks.filter(t => t.status === 'proceso').length;
+            const tasa = total > 0 ? Math.round((completadas / total) * 100) : 0;
+
+            // Animación de números simple
+            document.getElementById('kpiTotal').innerText = total;
+            document.getElementById('kpiDone').innerText = completadas;
+            document.getElementById('kpiProgress').innerText = enProceso;
+            document.getElementById('kpiRate').innerText = `${tasa}%`;
+        }
+
+        function renderWorkloadChart(tasks) {
+            // 1. Filtrar solo las tareas que NO están completadas
+            const activeTasks = tasks.filter(t => t.status !== 'completado');
+
+            // 2. Agrupar por responsable
+            const workload = {};
+            activeTasks.forEach(t => {
+                const persona = t.assign && t.assign !== 'Sin Asignar' ? t.assign : 'Sin Asignar';
+                workload[persona] = (workload[persona] || 0) + 1;
+            });
+
+            // 3. Preparar datos para Chart.js
+            // Ordenar de mayor a menor carga
+            const sortedLabels = Object.keys(workload).sort((a, b) => workload[b] - workload[a]);
+            const dataValues = sortedLabels.map(label => workload[label]);
+
+            const ctx = document.getElementById('workloadChart').getContext('2d');
+            
+            // Destruir el gráfico anterior si existe (para cuando recargamos datos)
+            if(workloadChartInstance) workloadChartInstance.destroy();
+
+            workloadChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: sortedLabels,
+                    datasets: [{
+                        label: 'Actividades Pendientes',
+                        data: dataValues,
+                        backgroundColor: '#1D1D1F', // Negro Apple
+                        borderRadius: 8,
+                        barThickness: 32,
+                        hoverBackgroundColor: '#0071E3' // Azul al hacer hover
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(0,0,0,0.8)',
+                            titleFont: { family: 'Inter', size: 13 },
+                            bodyFont: { family: 'Inter', size: 12, weight: 'bold' },
+                            padding: 12,
+                            cornerRadius: 12,
+                            displayColors: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1, font: { family: 'Inter', size: 11, color: '#8E8E93' } },
+                            grid: { color: '#F5F5F7', drawBorder: false }
+                        },
+                        x: {
+                            ticks: { font: { family: 'Inter', size: 11, weight: 'bold', color: '#1D1D1F' } },
+                            grid: { display: false, drawBorder: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderRiskRadar(tasks) {
+            const container = document.getElementById('risksContainer');
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const riskItems = [];
+
+            tasks.forEach(t => {
+                if (t.status === 'completado' || !t.end_date) return; // Ignoramos terminadas o sin fecha
+
+                const [y, m, d] = t.end_date.split('-');
+                const endDate = new Date(y, m - 1, d);
+                
+                const diffTime = endDate - today;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                if (diffDays < 0) {
+                    // Atrasado (Alto Riesgo)
+                    riskItems.push({
+                        task: t,
+                        days: Math.abs(diffDays),
+                        type: 'high',
+                        message: `Atrasada por ${Math.abs(diffDays)} día(s)`
+                    });
+                } else if (diffDays <= 2) {
+                    // Vence hoy, mañana o pasado (Riesgo Medio)
+                    riskItems.push({
+                        task: t,
+                        days: diffDays,
+                        type: 'medium',
+                        message: diffDays === 0 ? 'Vence HOY' : `Vence en ${diffDays} día(s)`
+                    });
+                }
+            });
+
+            // Ordenar: Primero los más atrasados (mayor número de días negativos = mayor urgencia)
+            riskItems.sort((a, b) => {
+                if(a.type === 'high' && b.type === 'medium') return -1;
+                if(a.type === 'medium' && b.type === 'high') return 1;
+                if(a.type === 'high') return b.days - a.days; // Mayor atraso primero
+                return a.days - b.days; // Menor tiempo restante primero
+            });
+
+            if (riskItems.length === 0) {
+                container.innerHTML = `
+                    <div class="flex flex-col items-center justify-center py-10 text-center opacity-70">
+                        <div class="w-12 h-12 bg-green-50 text-green-500 rounded-full flex items-center justify-center mb-3"><i data-lucide="shield-check" class="w-6 h-6"></i></div>
+                        <h4 class="text-sm font-bold text-gray-900 mb-1">Cero Riesgos</h4>
+                        <p class="text-[10px] text-gray-500 font-medium uppercase tracking-widest">Todo está al día</p>
+                    </div>`;
+                lucide.createIcons();
+                return;
+            }
+
+            container.innerHTML = riskItems.map(item => {
+                const iconColor = item.type === 'high' ? 'text-red-500' : 'text-yellow-600';
+                const textColor = item.type === 'high' ? 'text-red-600' : 'text-yellow-700';
+                const timeStr = item.task.end_date.split('-').reverse().slice(0,2).join('/'); // Ej: 24/12
+
+                return `
+                <a href="plan_trabajo.html" class="block rounded-xl p-4 risk-item risk-${item.type} transition hover:opacity-80 group">
+                    <div class="flex justify-between items-start mb-1">
+                        <span class="text-[9px] font-black uppercase tracking-widest ${textColor}">${item.message}</span>
+                        <span class="text-[10px] font-bold text-gray-500 flex items-center gap-1"><i data-lucide="calendar" class="w-3 h-3"></i> ${timeStr}</span>
+                    </div>
+                    <h4 class="text-sm font-bold text-gray-900 leading-snug mb-2 group-hover:underline">${item.task.title}</h4>
+                    <div class="flex items-center gap-2">
+                        <div class="w-5 h-5 bg-black rounded-full flex items-center justify-center text-white text-[7px] font-bold shrink-0">${item.task.initials}</div>
+                        <p class="text-[10px] text-gray-600 font-bold truncate">${item.task.assign}</p>
+                    </div>
+                </a>`;
+            }).join('');
+
+            lucide.createIcons();
+        }
+
+        runDashboard();
+    </script>
+</body>
+</html>
