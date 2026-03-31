@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gesolva | Administración</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --apple-bg: #F5F5F7; --apple-card: #FFFFFF; }
+        * { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+        body { background-color: var(--apple-bg); color: #1D1D1F; margin: 0; overflow-x: hidden; }
+
+        /* Estilos Globales de Layout (Para core.js) */
+        .sidebar { width: 260px; height: 100vh; position: fixed; background: rgba(255,255,255,0.8); backdrop-filter: saturate(180%) blur(20px); border-right: 1px solid rgba(0,0,0,0.08); z-index: 100; transform: translateX(-100%); transition: transform 0.3s ease; }
+        @media (min-width: 1024px) { .sidebar { transform: translateX(0); } .main-content { margin-left: 260px; } }
+        .sidebar.active { transform: translateX(0); }
+        .apple-dropdown { position: absolute; top: 100%; right: 0; margin-top: 8px; background: rgba(255,255,255,0.98); backdrop-filter: blur(20px); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.05); width: 180px; opacity: 0; visibility: hidden; z-index: 200; transition: all 0.2s; }
+        .apple-dropdown.active { opacity: 1; visibility: visible; }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 1200; padding: 20px; }
+        .modal-overlay.active { display: flex; }
+        .modal-content { background: white; width: 100%; max-width: 400px; border-radius: 28px; padding: 32px; position: relative; }
+
+        /* Estilos del Módulo */
+        .apple-card { background: var(--apple-card); border-radius: 24px; box-shadow: 0 4px 24px rgba(0,0,0,0.04); border: 1px solid transparent; }
+        .role-admin { background: #E3F2FD; color: #0071E3; }
+        .role-editor { background: #F5F5F7; color: #1D1D1F; }
+        .role-manager { background: #F4E8FF; color: #AF52DE; }
+        .role-lector { background: #FFF5E6; color: #FF9500; }
+        
+        .status-activo { background: #E3F9E5; color: #1DB446; }
+        .status-inactivo { background: #FFF1F0; color: #FF3B30; }
+
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-thumb { background: #E5E5EA; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+    <script src="core.js"></script>
+
+    <div id="confirmActionModal" class="modal-overlay">
+        <div class="modal-content max-w-sm text-center p-8 relative">
+            <button onclick="cancelConfirmAction()" class="absolute top-4 right-4 text-gray-400 hover:text-black transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+            <div class="w-14 h-14 bg-yellow-50 text-yellow-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm"><i data-lucide="alert-triangle" class="w-7 h-7"></i></div>
+            <h3 id="confirmActionTitle" class="text-xl font-bold mb-2 tracking-tight text-gray-900">Confirmar</h3>
+            <p id="confirmActionMessage" class="text-xs text-gray-500 mb-8 font-medium leading-relaxed">¿Estás seguro de continuar?</p>
+            <div class="flex gap-3">
+                <button onclick="cancelConfirmAction()" class="flex-1 bg-gray-100 text-gray-700 py-3.5 rounded-xl text-xs font-bold transition hover:bg-gray-200">Cancelar</button>
+                <button id="confirmActionExecuteBtn" class="flex-1 text-white py-3.5 rounded-xl text-xs font-bold transition shadow-lg active:scale-95">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
+    <main class="main-content">
+        <div class="p-6 lg:p-10 max-w-7xl mx-auto" id="adminContent">
+            
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-10">
+                <div>
+                    <h2 class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-2">Seguridad & Control</h2>
+                    <h1 class="text-3xl font-bold tracking-tight">Administración</h1>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-8">
+                <div class="apple-card p-6 flex flex-col justify-center">
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Total Usuarios</p>
+                    <p class="text-4xl font-bold tracking-tight text-gray-900" id="kpiTotalUsers">0</p>
+                </div>
+                <div class="apple-card p-6 flex flex-col justify-center">
+                    <p class="text-[10px] font-bold text-green-500 uppercase tracking-widest mb-1">Cuentas Activas</p>
+                    <p class="text-4xl font-bold tracking-tight text-green-600" id="kpiActiveUsers">0</p>
+                </div>
+                <div class="apple-card p-6 flex flex-col justify-center">
+                    <p class="text-[10px] font-bold text-blue-500 uppercase tracking-widest mb-1">Administradores</p>
+                    <p class="text-4xl font-bold tracking-tight text-blue-600" id="kpiAdmins">0</p>
+                </div>
+                <div class="apple-card p-6 flex flex-col justify-center">
+                    <p class="text-[10px] font-bold text-purple-500 uppercase tracking-widest mb-1">Acciones Hoy</p>
+                    <p class="text-4xl font-bold tracking-tight text-purple-600" id="kpiLogsToday">0</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                
+                <div class="lg:col-span-8">
+                    <div class="apple-card p-6 md:p-8">
+                        <div class="mb-6 pb-4 border-b border-gray-100 flex justify-between items-end">
+                            <div>
+                                <h3 class="text-lg font-bold tracking-tight text-gray-900">Directorio de Miembros</h3>
+                                <p class="text-xs text-gray-500 font-medium mt-1">Gestiona roles y accesos a la plataforma.</p>
+                            </div>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="text-[9px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">
+                                        <th class="pb-3 px-2">Usuario</th>
+                                        <th class="pb-3 px-2">Rol Asignado</th>
+                                        <th class="pb-3 px-2">Estado</th>
+                                        <th class="pb-3 px-2 text-right">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="usersTableBody" class="text-sm">
+                                    <tr><td colspan="4" class="text-center py-8 text-xs text-gray-400 animate-pulse">Cargando directorio...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-4">
+                    <div class="apple-card p-6 md:p-8 flex flex-col h-full max-h-[600px]">
+                        <div class="mb-6 pb-4 border-b border-gray-100">
+                            <h3 class="text-lg font-bold tracking-tight text-gray-900">Registro de Auditoría</h3>
+                            <p class="text-xs text-gray-500 font-medium mt-1">Últimas 50 acciones del equipo.</p>
+                        </div>
+
+                        <div class="flex-1 overflow-y-auto pr-2 space-y-5" id="logsContainer">
+                            <p class="text-center py-8 text-xs text-gray-400 animate-pulse">Cargando registros...</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let usersData = [];
+        let pendingRoleRevert = null; // Variable global para guardar el estado previo del dropdown
+
+        // --- ARRANQUE Y SEGURIDAD ---
+        async function runAdmin() {
+            const isLogged = await initCore(); 
+            if(isLogged) {
+                // Candado de Seguridad
+                if (userRole !== 'Administrador') {
+                    document.getElementById('adminContent').innerHTML = `
+                        <div class="flex flex-col items-center justify-center py-20 text-center animate-in fade-in zoom-in duration-300">
+                            <div class="w-20 h-20 bg-red-50 text-red-500 rounded-3xl flex items-center justify-center mb-6 shadow-sm"><i data-lucide="shield-alert" class="w-10 h-10"></i></div>
+                            <h1 class="text-3xl font-black tracking-tight text-gray-900 mb-2">Acceso Restringido</h1>
+                            <p class="text-sm text-gray-500 font-medium max-w-sm mb-8">No tienes permisos de Administrador para ver esta página.</p>
+                            <a href="index.html" class="bg-black text-white px-8 py-3 rounded-full text-xs font-bold shadow-lg transition active:scale-95">Volver al Dashboard</a>
+                        </div>`;
+                    if(typeof lucide !== 'undefined') lucide.createIcons();
+                    return;
+                }
+                
+                if(typeof lucide !== 'undefined') lucide.createIcons();
+                loadDashboardAdmin();
+            }
+        }
+
+        // --- CARGA DE DATOS ---
+        async function loadDashboardAdmin() {
+            // Cargar Usuarios
+            const { data: users } = await _supabase.from('profiles').select('*').order('created_at', { ascending: false });
+            usersData = users || [];
+            
+            // Cargar Logs
+            const { data: logs } = await _supabase.from('activity_logs').select('*, profiles(full_name)').order('created_at', { ascending: false }).limit(50);
+            
+            renderKPIs(usersData, logs || []);
+            renderUsersTable();
+            renderLogsList(logs || []);
+        }
+
+        function renderKPIs(users, logs) {
+            document.getElementById('kpiTotalUsers').innerText = users.length;
+            document.getElementById('kpiActiveUsers').innerText = users.filter(u => u.status === 'Activo').length;
+            document.getElementById('kpiAdmins').innerText = users.filter(u => u.role === 'Administrador').length;
+            
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('kpiLogsToday').innerText = logs.filter(l => l.created_at.startsWith(today)).length;
+        }
+
+        // --- RENDERIZADO DE TABLA DE USUARIOS ---
+        function renderUsersTable() {
+            const tbody = document.getElementById('usersTableBody');
+            
+            tbody.innerHTML = usersData.map(u => {
+                const initials = u.full_name.substring(0,2).toUpperCase();
+                const isMe = u.id === currentUser.id;
+                
+                // Selector de Rol (Actualizado con confirmación)
+                const roleSelect = `<select data-prev="${u.role}" onfocus="this.setAttribute('data-prev', this.value)" onchange="requestRoleChange('${u.id}', this)" class="bg-gray-50 border border-gray-100 text-xs font-bold px-2 py-1.5 rounded-lg outline-none cursor-pointer hover:bg-gray-100 transition ${isMe ? 'opacity-50 cursor-not-allowed' : ''}" ${isMe ? 'disabled title="No puedes cambiar tu propio rol"' : ''}>
+                    <option value="Administrador" ${u.role === 'Administrador' ? 'selected' : ''}>Administrador</option>
+                    <option value="Manager" ${u.role === 'Manager' ? 'selected' : ''}>Manager</option>
+                    <option value="Editor" ${u.role === 'Editor' ? 'selected' : ''}>Editor</option>
+                    <option value="Lector" ${u.role === 'Lector' ? 'selected' : ''}>Lector</option>
+                </select>`;
+
+                // Toggle de Estado
+                const statusBtn = `<button onclick="updateUser('${u.id}', 'status', '${u.status === 'Activo' ? 'Inactivo' : 'Activo'}')" class="px-2.5 py-1 rounded-md text-[9px] font-black uppercase tracking-widest transition hover:scale-105 status-${u.status.toLowerCase()} ${isMe ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}">${u.status}</button>`;
+
+                return `
+                <tr class="border-b border-gray-50 hover:bg-gray-50/50 transition">
+                    <td class="py-3 px-2">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 bg-black rounded-full flex shrink-0 items-center justify-center text-white text-[10px] font-bold shadow-sm">${initials}</div>
+                            <div class="overflow-hidden">
+                                <p class="text-xs font-bold text-gray-900 truncate">${u.full_name} ${isMe ? '<span class="text-[9px] text-blue-500 font-black ml-1">(Tú)</span>' : ''}</p>
+                                <p class="text-[10px] text-gray-400 truncate">${u.email || 'Sin correo'}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="py-3 px-2">${roleSelect}</td>
+                    <td class="py-3 px-2">${statusBtn}</td>
+                    <td class="py-3 px-2 text-right">
+                        ${isMe ? '<span class="text-[10px] text-gray-400 font-bold">Protegido</span>' : `
+                        <div class="relative inline-block text-left">
+                            <button onclick="toggleDropdown('admin-drop-${u.id}')" class="text-gray-400 hover:text-black p-1.5 rounded-lg hover:bg-gray-100 transition"><i data-lucide="more-horizontal" class="w-4 h-4"></i></button>
+                            <div id="admin-drop-${u.id}" class="apple-dropdown p-2 right-0 w-40 z-50">
+                                <button onclick="deleteUser('${u.id}', '${u.full_name}')" class="w-full text-left px-3 py-2 text-xs font-bold text-red-500 hover:bg-red-50 rounded-lg flex items-center gap-2"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Eliminar Usuario</button>
+                            </div>
+                        </div>`}
+                    </td>
+                </tr>`;
+            }).join('');
+            if(typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        // --- RENDERIZADO DE LOGS ---
+        function renderLogsList(logs) {
+            const container = document.getElementById('logsContainer');
+            if(logs.length === 0) { container.innerHTML = '<p class="text-center text-xs text-gray-400">No hay actividad reciente.</p>'; return; }
+
+            const moduleIcons = { 'auth': 'user', 'req': 'layers', 'plan': 'calendar', 'finanzas': 'dollar-sign' };
+            const moduleColors = { 'auth': 'text-purple-500 bg-purple-50', 'req': 'text-blue-500 bg-blue-50', 'plan': 'text-green-500 bg-green-50', 'finanzas': 'text-yellow-500 bg-yellow-50' };
+
+            container.innerHTML = logs.map(l => {
+                const icon = moduleIcons[l.module] || 'activity';
+                const color = moduleColors[l.module] || 'text-gray-500 bg-gray-50';
+                const userName = l.profiles ? l.profiles.full_name : 'Sistema';
+                const timeStr = new Date(l.created_at).toLocaleString('es-ES', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+
+                return `
+                <div class="flex gap-4">
+                    <div class="w-8 h-8 rounded-full ${color} flex items-center justify-center shrink-0 border border-white shadow-sm"><i data-lucide="${icon}" class="w-4 h-4"></i></div>
+                    <div class="flex-1 pt-1.5 pb-4 border-b border-gray-50 last:border-0">
+                        <p class="text-xs text-gray-800 leading-snug"><span class="font-bold">${userName}</span> ${l.action}</p>
+                        <p class="text-[9px] text-gray-400 font-bold uppercase tracking-widest mt-1">${timeStr}</p>
+                    </div>
+                </div>`;
+            }).join('');
+            if(typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        // --- FUNCIONES DEL MODAL DE CONFIRMACIÓN ---
+        function requestRoleChange(userId, selectElement) {
+            const newValue = selectElement.value;
+            const oldValue = selectElement.getAttribute('data-prev');
+            const user = usersData.find(u => u.id === userId);
+
+            document.getElementById('confirmActionTitle').innerText = 'Cambio de Permisos';
+            document.getElementById('confirmActionMessage').innerText = `¿Estás seguro de cambiar el rol de ${user.full_name} a ${newValue}? Esto modificará su nivel de acceso en la plataforma.`;
+
+            const btn = document.getElementById('confirmActionExecuteBtn');
+            btn.className = 'flex-1 bg-blue-600 text-white py-3.5 rounded-xl text-xs font-bold transition shadow-lg hover:bg-blue-700 active:scale-95';
+            btn.innerText = 'Cambiar Rol';
+            
+            // Si cancela, regresamos el select a su valor anterior
+            pendingRoleRevert = () => { selectElement.value = oldValue; };
+
+            btn.onclick = () => {
+                closeModal('confirmActionModal');
+                selectElement.setAttribute('data-prev', newValue); // Guarda el nuevo estado
+                pendingRoleRevert = null; // Limpiamos la función de revertir
+                updateUser(userId, 'role', newValue);
+            };
+
+            openModal('confirmActionModal');
+            if(typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function cancelConfirmAction() {
+            closeModal('confirmActionModal');
+            if (pendingRoleRevert) { 
+                pendingRoleRevert(); 
+                pendingRoleRevert = null; 
+            }
+        }
+
+        // --- ACCIONES DE ADMINISTRADOR ---
+        async function updateUser(userId, field, newValue) {
+            const payload = {}; payload[field] = newValue;
+            
+            // UX Visual instantánea
+            const loadingToast = document.createElement('div');
+            loadingToast.className = 'fixed bottom-5 right-5 bg-black text-white px-4 py-2 rounded-full text-xs font-bold shadow-xl z-[9999] flex items-center gap-2 animate-in slide-in-from-bottom-5';
+            loadingToast.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Actualizando...';
+            document.body.appendChild(loadingToast); if(typeof lucide !== 'undefined') lucide.createIcons();
+
+            const { error } = await _supabase.from('profiles').update(payload).eq('id', userId);
+            
+            loadingToast.remove();
+
+            if(error) {
+                showAlert("Error", "No se pudo actualizar el usuario.", "error");
+            } else {
+                const actionText = field === 'role' ? `Cambió el rol a ${newValue}` : `Cambió el estado a ${newValue}`;
+                const userNameTarget = usersData.find(u => u.id === userId)?.full_name || 'un usuario';
+                await logActivity(`${actionText} de ${userNameTarget}`, 'auth');
+                loadDashboardAdmin(); // Recargar todo
+            }
+        }
+
+        function deleteUser(userId, userName) {
+            document.getElementById('confirmActionTitle').innerText = 'Inhabilitar Usuario';
+            document.getElementById('confirmActionMessage').innerText = `¿Estás completamente seguro de que deseas inhabilitar y ocultar a ${userName}? Perderá todo acceso al sistema de forma inmediata.`;
+
+            const btn = document.getElementById('confirmActionExecuteBtn');
+            btn.className = 'flex-1 bg-red-500 text-white py-3.5 rounded-xl text-xs font-bold transition shadow-lg hover:bg-red-600 active:scale-95';
+            btn.innerText = 'Sí, Inhabilitar';
+            
+            pendingRoleRevert = null; // No aplica revertir aquí
+            
+            btn.onclick = async () => {
+                closeModal('confirmActionModal');
+                
+                // Spinner visual
+                const loadingToast = document.createElement('div');
+                loadingToast.className = 'fixed bottom-5 right-5 bg-black text-white px-4 py-2 rounded-full text-xs font-bold shadow-xl z-[9999] flex items-center gap-2 animate-in slide-in-from-bottom-5';
+                loadingToast.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Procesando...';
+                document.body.appendChild(loadingToast); if(typeof lucide !== 'undefined') lucide.createIcons();
+
+                const { error } = await _supabase.from('profiles').update({ status: 'Inactivo', role: 'Lector' }).eq('id', userId);
+                
+                loadingToast.remove();
+
+                if(!error) {
+                    await logActivity(`Revocó todos los accesos de ${userName}`, 'auth');
+                    showAlert("Usuario Inhabilitado", "El usuario ya no tiene acceso a la plataforma.", "success");
+                    loadDashboardAdmin();
+                } else {
+                    showAlert("Error", "No se pudo completar la acción.", "error");
+                }
+            };
+
+            openModal('confirmActionModal');
+            if(typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        // Disparamos el módulo
+        runAdmin();
+    </script>
+</body>
+</html>
